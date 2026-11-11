@@ -126,7 +126,10 @@ def phrase_portee(b: BorneStatistique, langue: str = "fr") -> str:
         )
     if langue == "en":
         lignes = ", ".join(f"{ligne.confiance:.0%} for p = {ligne.probabilite:g}" for ligne in b.lignes)
-        return f"{b.n_rejeux} independent replays per scenario detect with {lignes}. A rare behaviour is NOT excluded."
+        return (
+            f"{b.n_rejeux} independent replays per scenario detect with {lignes}. "
+            "A rare behaviour is NOT excluded."
+        )
     lignes = ", ".join(f"{ligne.confiance:.0%} pour p = {ligne.probabilite:g}" for ligne in b.lignes)
     return (
         f"{b.n_rejeux} rejeux indépendants par scénario détectent avec {lignes}. "

@@ -91,6 +91,16 @@ def texte(a: Attestation, langue: str = "fr") -> str:
     return _texte_fr(a) if langue == "fr" else _texte_en(a)
 
 
+def _mode_fr(mode: Mode) -> str:
+    return (
+        "Ombre (réplique, données synthétiques)" if mode is Mode.OMBRE else "Observé (production journalisée)"
+    )
+
+
+def _mode_en(mode: Mode) -> str:
+    return "Shadow (replica, synthetic data)" if mode is Mode.OMBRE else "Observed (logged production)"
+
+
 def _texte_fr(a: Attestation) -> str:
     lignes = [
         f"ATTESTATION D'HOMOLOGATION{' ' * 20}{a.numero}",
@@ -103,7 +113,7 @@ def _texte_fr(a: Attestation) -> str:
         f"  Modèle déclaré      {a.modele_declare}",
         "",
         "HOMOLOGATION",
-        f"  Mode                {'Ombre (réplique, données synthétiques)' if a.mode is Mode.OMBRE else 'Observé (production journalisée)'}",
+        f"  Mode                {_mode_fr(a.mode)}",
         f"  Manifeste           v{a.manifeste_version}",
         f"  Scénarios           {a.scenarios}",
         f"  Rejeux par scénario {a.n_rejeux} — {a.sessions} sessions isolées",
@@ -126,7 +136,7 @@ def _texte_fr(a: Attestation) -> str:
         lignes.append("")
     lignes += [
         "PORTÉE STATISTIQUE",
-        *[f"  {l}" for l in _portee(a.borne, "fr")],
+        *[f"  {ligne}" for ligne in _portee(a.borne, "fr")],
         "",
         "INTÉGRITÉ",
         f"  Empreinte du journal   {a.empreinte_journal} (chaîné, {a.entrees_journal} entrées)",
@@ -155,7 +165,7 @@ def _texte_en(a: Attestation) -> str:
         f"  Declared model      {a.modele_declare}",
         "",
         "HOMOLOGATION",
-        f"  Mode                {'Shadow (replica, synthetic data)' if a.mode is Mode.OMBRE else 'Observed (logged production)'}",
+        f"  Mode                {_mode_en(a.mode)}",
         f"  Manifest            v{a.manifeste_version}",
         f"  Scenarios           {a.scenarios}",
         f"  Replays per scenario {a.n_rejeux} — {a.sessions} isolated sessions",
@@ -202,9 +212,8 @@ def _portee(borne: BorneStatistique, langue: str) -> list[str]:
     lignes.append(entete)
     for ligne in borne.lignes:
         if langue == "fr":
-            lignes.append(
-                f"    {ligne.confiance:>5.0%}  un comportement survenant une fois sur {1 / ligne.probabilite:.0f}"
-            )
+            frequence = 1 / ligne.probabilite
+            lignes.append(f"    {ligne.confiance:>5.0%}  un comportement une fois sur {frequence:.0f}")
         else:
             lignes.append(
                 f"    {ligne.confiance:>5.0%}  a behaviour occurring 1 time in {1 / ligne.probabilite:.0f}"

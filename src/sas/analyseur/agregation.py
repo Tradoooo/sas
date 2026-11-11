@@ -49,11 +49,6 @@ class Agregat:
     lectures_sensibles: dict[str, list[str]] = field(default_factory=dict)
     ecritures: Counter[str] = field(default_factory=Counter)
 
-    @property
-    def couverture(self) -> float:
-        """KPI-4 — the journal is complete or the campaign is void."""
-        return 1.0 if self.appels else 1.0
-
 
 def agreger(entrees: Sequence[EntreeJournal], *, sensibles: Sequence[str] = ()) -> Agregat:
     """Reduce a campaign journal to counters. Pure, ordered, reproducible."""
