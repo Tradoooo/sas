@@ -125,5 +125,5 @@ Code, identifiers, docstrings and commit messages: **English or French, but
 one file stays consistent**. User-facing strings go through `sas.i18n`.
 Submission deliverables (`README.md`, `docs/ARCHITECTURE.md`, `docs/HLD.md`,
 `docs/SUBMISSION.md`, `docs/TEST-INSTRUCTIONS.md`, `docs/VIDEO.md`) are in
-**English** (spec preamble). `docs/fr/CAHIER-SAS.md` is the source document
+**English** (spec preamble). `docs/fr/CAHIER-DES-CHARGES.md` is the source document
 and stays in French, unmodified.

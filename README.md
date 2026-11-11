@@ -103,7 +103,7 @@ eval/                 20 faulty + 20 benign agents, 100 labelled attempts
 infra/cdk/            infrastructure as code
 infra/quick/          Amazon Quick datasets
 docs/                 HLD, architecture, runbook, submission, video script
-docs/fr/CAHIER-SAS.md the source specification (French, unmodified)
+docs/fr/CAHIER-DES-CHARGES.md the source specification (French, unmodified)
 ```
 
 ## Documentation
@@ -118,7 +118,7 @@ docs/fr/CAHIER-SAS.md the source specification (French, unmodified)
 | [`docs/RECETTE.md`](docs/RECETTE.md) | Acceptance test results (R1–R24) |
 | [`docs/SUBMISSION.md`](docs/SUBMISSION.md) | Submission checklist |
 | [`docs/VIDEO.md`](docs/VIDEO.md) | 3-minute video script |
-| [`docs/fr/CAHIER-SAS.md`](docs/fr/CAHIER-SAS.md) | The French source specification |
+| [`docs/fr/CAHIER-DES-CHARGES.md`](docs/fr/CAHIER-DES-CHARGES.md) | The French source specification |
 
 ## Engineering rules
 
