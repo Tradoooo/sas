@@ -1,0 +1,376 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/BaptisteFaisy/sas/schemas/manifeste.schema.json",
+  "title": "Sas agent manifest",
+  "description": "Signed declaration of what a third-party agent asks for and commits to (spec §9).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "manifeste",
+    "identite",
+    "finalite",
+    "outils_demandes",
+    "donnees_demandees",
+    "sorties_autorisees",
+    "budgets",
+    "scenarios",
+    "interdictions_explicites",
+    "engagements"
+  ],
+  "properties": {
+    "manifeste": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "date"
+      ],
+      "properties": {
+        "version": {
+          "type": "integer",
+          "exclusiveMinimum": 0,
+          "description": "manifest version, incremented on any change"
+        },
+        "date": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      "description": "header"
+    },
+    "identite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "nom",
+        "editeur",
+        "version_agent",
+        "empreinte_paquet",
+        "modele",
+        "version_modele",
+        "engagement_notification_modele"
+      ],
+      "properties": {
+        "nom": {
+          "type": "string",
+          "minLength": 1
+        },
+        "editeur": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version_agent": {
+          "type": "string",
+          "minLength": 1
+        },
+        "empreinte_paquet": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "modele": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version_modele": {
+          "type": "string",
+          "minLength": 1
+        },
+        "engagement_notification_modele": {
+          "type": "boolean"
+        }
+      },
+      "description": "who and what exactly is running"
+    },
+    "finalite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fait",
+        "ne_fait_pas"
+      ],
+      "properties": {
+        "fait": {
+          "type": "string",
+          "minLength": 1
+        },
+        "ne_fait_pas": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "description": "what the agent does, and what it does not do"
+    },
+    "outils_demandes": {
+      "type": "array",
+      "description": "one entry per requested tool",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "nom",
+          "operation",
+          "justification"
+        ],
+        "properties": {
+          "nom": {
+            "type": "string",
+            "minLength": 1
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "description": "lecture | ecriture | execution"
+          },
+          "justification": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "donnees_demandees": {
+      "type": "array",
+      "description": "fine-grained resources: never 'access to the data'",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "ressource",
+          "justification"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "minLength": 1,
+            "description": "s3 | table | index | http"
+          },
+          "ressource": {
+            "type": "string",
+            "minLength": 1
+          },
+          "justification": {
+            "type": "string",
+            "minLength": 1
+          },
+          "colonnes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "prefixes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "sensible": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "sorties_autorisees": {
+      "type": "array",
+      "description": "empty by default; the key must be present",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "destination",
+          "protocole",
+          "justification"
+        ],
+        "properties": {
+          "destination": {
+            "type": "string",
+            "minLength": 1
+          },
+          "protocole": {
+            "type": "string",
+            "minLength": 1,
+            "description": "http | courriel | dns | webhook"
+          },
+          "justification": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "budgets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "appels_par_execution",
+        "jetons_par_execution",
+        "duree_maximale_secondes",
+        "memoire_maximale_mio"
+      ],
+      "properties": {
+        "appels_par_execution": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "jetons_par_execution": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "duree_maximale_secondes": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "memoire_maximale_mio": {
+          "type": "integer",
+          "exclusiveMinimum": 0
+        }
+      },
+      "description": "hard bounds, enforced by Policy"
+    },
+    "memoire": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "persistante"
+      ],
+      "properties": {
+        "persistante": {
+          "type": "boolean"
+        }
+      },
+      "description": "if true, replays are no longer independent (§14.6)"
+    },
+    "scenarios": {
+      "type": "array",
+      "description": "nominal use cases the agent must handle",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "nom"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "nom": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sensibilite": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "interdictions_explicites": {
+      "type": "array",
+      "description": "what the agent must never do, even if technically able",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "texte"
+        ],
+        "properties": {
+          "texte": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "engagements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "notification_changement_modele",
+        "notification_changement_invite",
+        "delai_correction_critique",
+        "contact"
+      ],
+      "properties": {
+        "notification_changement_modele": {
+          "type": "string",
+          "minLength": 1
+        },
+        "notification_changement_invite": {
+          "type": "string",
+          "minLength": 1
+        },
+        "delai_correction_critique": {
+          "type": "string",
+          "minLength": 1
+        },
+        "contact": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "description": "vendor commitments"
+    },
+    "signature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "signataire",
+        "qualite",
+        "date"
+      ],
+      "properties": {
+        "signataire": {
+          "type": "string",
+          "minLength": 1
+        },
+        "qualite": {
+          "type": "string",
+          "minLength": 1
+        },
+        "date": {
+          "type": "string",
+          "format": "date"
+        },
+        "empreinte_document": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      },
+      "description": "editor signature"
+    },
+    "validation_client": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "commanditaire",
+        "date",
+        "perimetre_approuve",
+        "mode_autorise"
+      ],
+      "properties": {
+        "commanditaire": {
+          "type": "string",
+          "minLength": 1
+        },
+        "date": {
+          "type": "string",
+          "format": "date"
+        },
+        "perimetre_approuve": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mode_autorise": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "description": "sponsor validation"
+    }
+  }
+}
