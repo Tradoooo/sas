@@ -275,7 +275,14 @@ def _routes_livrables(app: Any, service: ServiceSas) -> None:
 
     @app.get("/health")
     def health():
-        return {"statut": "ok", "campagnes": len(service.dossiers)}
+        # The demo token is handed out on purpose: this portal is a public
+        # demonstration with synthetic data and no client information. A real
+        # deployment issues Cognito tokens and this field disappears.
+        return {
+            "statut": "ok",
+            "campagnes": len(service.dossiers),
+            "jeton_demo": emettre("tenant-demo", "analyste_msp", "Analyste MSP"),
+        }
 
 
 # --------------------------------------------------------------------------- #

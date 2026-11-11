@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sas — homologation d'agents IA tiers</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <div class="marque">
+    <span class="logo">⛨</span>
+    <div>
+      <h1>Sas</h1>
+      <p class="sous-titre">Homologation et exécution contrôlée des agents IA tiers</p>
+    </div>
+  </div>
+  <div class="etat" id="etat">connexion…</div>
+</header>
+
+<p class="avertissement">
+  Jeu de démonstration : les trois agents invités sont <strong>synthétiques</strong>
+  et étiquetés comme tels. Aucune donnée personnelle réelle, aucun agent réel
+  d'éditeur. Tout tourne hors ligne sur le backend local.
+</p>
+
+<main>
+  <section class="colonne gauche">
+    <h2>Registre de flotte</h2>
+    <table id="registre">
+      <thead><tr><th>Agent</th><th>Version</th><th>Statut</th></tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <h2>Lancer une homologation</h2>
+    <form id="formulaire">
+      <label>Agent invité
+        <select id="agent">
+          <option value="demo-conforme">demo-conforme — fait exactement ce qu'il déclare</option>
+          <option value="demo-bavard" selected>demo-bavard — explore et touche un leurre</option>
+          <option value="demo-curieux">demo-curieux — lit un leurre sensible puis tente une sortie</option>
+          <option value="demo-opaque">demo-opaque — ne passe pas par la passerelle</option>
+        </select>
+      </label>
+      <label>Scénarios
+        <select id="scenarios" multiple size="4">
+          <option value="S1" selected>S1 — cas nominal simple</option>
+          <option value="S4" selected>S4 — instruction injectée</option>
+          <option value="S5">S5 — donnée sensible référencée</option>
+          <option value="S8">S8 — demande de sortie vers l'extérieur</option>
+        </select>
+      </label>
+      <label>Rejeux par scénario
+        <input id="rejeux" type="number" min="1" max="12" value="2">
+      </label>
+      <label>Graine
+        <input id="graine" type="number" value="7">
+      </label>
+      <button type="submit">Exécuter la campagne Ombre</button>
+    </form>
+
+    <h2>Portée statistique</h2>
+    <p class="note" id="portee">—</p>
+  </section>
+
+  <section class="colonne droite">
+    <h2>Résultat de la campagne</h2>
+    <div id="verdict" class="verdict">—</div>
+
+    <div class="grille">
+      <div class="carte"><span class="chiffre" id="sessions">–</span><span class="legende">sessions isolées</span></div>
+      <div class="carte"><span class="chiffre" id="appels">–</span><span class="legende">appels d'outils</span></div>
+      <div class="carte"><span class="chiffre" id="refus">–</span><span class="legende">refusés par Policy</span></div>
+      <div class="carte"><span class="chiffre" id="couverture">–</span><span class="legende">couverture du journal</span></div>
+      <div class="carte"><span class="chiffre" id="compositions">–</span><span class="legende">compositions détectées</span></div>
+      <div class="carte"><span class="chiffre" id="cout">–</span><span class="legende">coût mesuré ($)</span></div>
+    </div>
+
+    <h2>Découvertes — et ce qui a été filtré</h2>
+    <p class="note">
+      L'exploration est du bruit de raisonnement : elle est comptée puis
+      <strong>filtrée</strong> du rapport. C'est une exigence fonctionnelle
+      (§13.5), pas une amélioration — sans elle le RSSI voit 4 000 refus et
+      conclut que l'agent est hostile.
+    </p>
+    <table id="decouvertes">
+      <thead><tr><th>Nature</th><th>Nombre</th><th>Traité</th></tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <h2>Écart déclaré / observé</h2>
+    <table id="ecarts">
+      <thead><tr><th>Type</th><th>Ressource</th><th>Appels</th></tr></thead>
+      <tbody></tbody>
+    </table>
+
+    <h2>Compositions détectées</h2>
+    <p class="note">
+      Deux outils individuellement autorisés — lire une donnée sensible, envoyer
+      une requête — forment une exfiltration. Une politique par outil ne le voit
+      pas : Sas raisonne sur les <strong>chaînes d'appels</strong> (§16).
+    </p>
+    <ul id="compositions-liste"></ul>
+
+    <h2>Attestation</h2>
+    <pre id="attestation">—</pre>
+
+    <h2>Rapport complet</h2>
+    <div class="onglets">
+      <button type="button" data-langue="fr" class="actif">Français</button>
+      <button type="button" data-langue="en">English</button>
+    </div>
+    <pre id="rapport">—</pre>
+  </section>
+</main>
+
+<footer>
+  <h2>Ce que Sas ne garantit pas</h2>
+  <ul>
+    <li>Une homologation sur N rejeux ne prouve rien au-delà de la borne publiée.</li>
+    <li>Le mode Ombre ne couvre pas les comportements qui dépendent de données réelles.</li>
+    <li>Un agent non instrumentable est déclaré <strong>non mesurable</strong>, jamais conforme.</li>
+    <li>Les canaux cachés fins ne sont pas détectés.</li>
+    <li>Sas ne garantit pas la qualité fonctionnelle de l'agent, seulement son comportement d'accès.</li>
+  </ul>
+  <p>La décision de mise en production est le ressort exclusif du commanditaire.</p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
