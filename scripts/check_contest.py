@@ -138,21 +138,28 @@ def verifier_agentcore(rapport: Rapport) -> None:
             )
 
 
-def verifier_traçabilite(rapport: Rapport) -> None:
-    """EF-xx, ENF-xx and R1..R24 must each be quoted by at least one test."""
+def verifier_tracabilite(rapport: Rapport) -> None:
+    """Every EF-xx, ENF-xx and R1..R24 must be quoted by at least one test.
+
+    The identifier lists come from `sas.constantes`, so the matrix follows the
+    specification instead of a hand-made range.
+    """
+    sys.path.insert(0, str(RACINE / "src"))
+    from sas import constantes
+
     corpus = "\n".join(texte(c) for c in fichiers((".py",)) if "tests" in c.parts or "eval" in c.parts)
     if not corpus:
         rapport.avertissements.append("aucun test trouvé (lots en cours)")
         return
-    for prefixe, plage in (("EF", 40), ("ENF", 17), ("R", 24)):
-        absents = [
-            f"{prefixe}-{n:02d}" if prefixe != "R" else f"R{n}"
-            for n in range(1, plage + 1)
-            if (f"{prefixe}-{n:02d}" if prefixe != "R" else f"R{n}") not in corpus
-        ]
+    for famille, identifiants in (
+        ("EF", constantes.EF),
+        ("ENF", constantes.ENF),
+        ("R", constantes.RECETTE),
+    ):
+        absents = [i for i in identifiants if i not in corpus]
         rapport.preferer(
             not absents,
-            f"traçabilité {prefixe}: {plage - len(absents)}/{plage}"
+            f"traçabilité {famille}: {len(identifiants) - len(absents)}/{len(identifiants)}"
             + (f" — manquent {', '.join(absents[:12])}" if absents else ""),
         )
 
@@ -202,15 +209,24 @@ def verifier_limites(rapport: Rapport) -> None:
         rapport.bloquants.append(resultat.stdout.strip()[:600])
 
 
+# The needle is assembled at runtime so that this very file cannot match
+# itself (it did, once).
+AIGUILLE_ALEATOIRE = "import " + "random"
+AIGUILLE_MESSAGE = f"{AIGUILLE_ALEATOIRE} direct"
+
+
 def verifier_depots_interdits(rapport: Rapport) -> None:
-    """`random` used directly breaks reproducibility (contract B)."""
+    """Direct use of the stdlib PRNG breaks reproducibility (contract B)."""
     violes = [
         relatif(c)
         for c in fichiers((".py",))
-        if c.name != "aleatoire.py" and "tests" not in c.parts and "import random" in texte(c)
+        if c.name != "aleatoire.py"
+        and "tests" not in c.parts
+        and ".github" not in c.parts
+        and AIGUILLE_ALEATOIRE in texte(c)
     ]
     rapport.exiger(not violes, "aléatoire uniquement via sas.aleatoire")
-    rapport.bloquants.extend(f"{v}: import random direct" for v in violes)
+    rapport.bloquants.extend(f"{v}: {AIGUILLE_MESSAGE}" for v in violes)
 
 
 def main() -> int:
@@ -218,7 +234,7 @@ def main() -> int:
     verifier_livrables(rapport)
     verifier_anglais(rapport)
     verifier_agentcore(rapport)
-    verifier_traçabilite(rapport)
+    verifier_tracabilite(rapport)
     verifier_donnees(rapport)
     verifier_ci(rapport)
     verifier_secrets(rapport)
