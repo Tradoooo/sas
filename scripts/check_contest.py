@@ -37,7 +37,7 @@ LIVRABLES: tuple[tuple[str, bool], ...] = (
     ("docs/CONTRACTS.md", True),
     ("docs/RUNBOOK.md", False),
     ("docs/RECETTE.md", False),
-    ("docs/fr/CAHIER-SAS.md", True),
+    ("docs/fr/CAHIER-DES-CHARGES.md", True),
 )
 
 AGENTCORE: tuple[str, ...] = (
