@@ -44,3 +44,4 @@ secrets.*
 # Sas local state
 .var/
 data/generated/
+docs/spec/
