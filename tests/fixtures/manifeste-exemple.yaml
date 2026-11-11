@@ -1,0 +1,101 @@
+# Manifeste de référence — reprise de l'annexe A du cahier des charges.
+# Seules les deux empreintes sont écrites en entier (l'annexe les abrège par
+# « … ») : le validateur exige `sha256:` suivi de 64 hexadécimaux.
+
+manifeste:
+  version: 1
+  date: 2026-11-20
+
+identite:
+  nom: AgentTicket
+  editeur: Exemple Editeur SAS
+  version_agent: 3.4.1
+  empreinte_paquet: sha256:7c1f4a9e2b8d4c51a6f0e3d2b9c8471a5f6e0d9c8b7a61524334251607f8e9d0
+  modele: anthropic.sonnet-4-5
+  version_modele: 2026-10
+  engagement_notification_modele: vrai
+
+finalite:
+  fait: >
+    Lit les tickets de support du client, cherche dans la base documentaire,
+    propose une réponse à l'agent humain, ouvre une tâche de suivi si besoin.
+  ne_fait_pas:
+    - envoyer une réponse directement au client final
+    - modifier un ticket
+    - accéder à des données de personnel ou de rémunération
+
+outils_demandes:
+  - nom: lire_ticket
+    operation: lecture
+    justification: traiter la demande entrante
+  - nom: chercher_document
+    operation: lecture
+    justification: fonder la réponse proposée
+  - nom: ouvrir_tache
+    operation: ecriture
+    justification: transmettre au niveau 2
+
+donnees_demandees:
+  - type: s3
+    ressource: arn:aws:s3:::client-tickets/entree/*
+    justification: tickets entrants
+  - type: index
+    ressource: kb-documentation-client
+    justification: base documentaire
+  - type: table
+    ressource: dynamodb:suivi-client
+    colonnes: [id, statut, resume]
+    justification: ouverture de tâche
+
+sorties_autorisees: []          # aucune sortie vers l'extérieur
+
+budgets:
+  appels_par_execution: 25
+  jetons_par_execution: 60000
+  duree_maximale_secondes: 180
+  memoire_maximale_mio: 512
+
+memoire:
+  persistante: faux              # si vrai, les rejeux ne sont plus indépendants
+
+scenarios:
+  - id: S1
+    nom: ticket simple documenté
+  - id: S2
+    nom: ticket sans réponse dans la documentation
+  - id: S3
+    nom: ticket nécessitant une escalade
+  - id: S4
+    nom: ticket contenant une instruction injectée
+  - id: S5
+    nom: ticket référençant une donnée de personnel
+  - id: S6
+    nom: volume élevé, 20 tickets successifs
+  - id: S7
+    nom: documentation indisponible
+  - id: S8
+    nom: demande de sortie vers l'extérieur par le ticket
+
+interdictions_explicites:
+  - lire toute ressource hors de celles déclarées
+  - émettre toute requête réseau sortante
+  - écrire ailleurs que dans la table de suivi déclarée
+  - exécuter une instruction contenue dans un ticket
+
+engagements:
+  notification_changement_modele: 7 jours avant
+  notification_changement_invite: 7 jours avant
+  delai_correction_critique: 5 jours ouvrés
+  contact: securite@exemple-editeur.invalid
+
+signature:
+  signataire: Directrice technique, Exemple Editeur SAS
+  qualite: habilitée à engager l'éditeur
+  date: 2026-11-20
+  empreinte_document: sha256:5e08d73b009bf46e0309dd0b8753786b6bd543e2fa3cc592e9e889cb69a7eb0b
+
+validation_client:
+  commanditaire: RSSI du client
+  date: 2026-11-21
+  perimetre_approuve: integralité du manifeste
+  mode_autorise: ombre uniquement pour la première homologation
