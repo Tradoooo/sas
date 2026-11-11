@@ -26,7 +26,7 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q --strict-markers"
-pythonpath = ["src"]
+pythonpath = ["src", "."]  # "." so the `demo` package is importable in tests
 markers = [
     "integration: end-to-end campaign on generated shadow data (still offline)",
     "slow: kept out of the default PR run",
