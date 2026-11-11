@@ -2,7 +2,7 @@
 
 > Submission deliverable (§24.3). This page is the honesty section of the
 > submission: every limit below is stated **on the report, on the attestation
-> and in the portal footer**, not only here. Listing a report's own reach is not a weakness —
+and in the vendor gap report and in the portal footer**, not only here. Listing a report's own reach is not a weakness —
 > it is what makes the document signable by an insurer, an auditor or a
 > contracting authority (§24.3). A report that does not state its reach is not
 > an engineering report (§14.4).
