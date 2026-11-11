@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sas"
+version = "0.1.0"
+description = "Sas — homologation and controlled execution of third-party AI agents (Amazon Bedrock AgentCore)"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+dependencies = []
+
+[project.optional-dependencies]
+api = ["fastapi>=0.110", "uvicorn>=0.27", "httpx>=0.27"]
+aws = ["boto3>=1.34"]
+assets = ["PyYAML>=6.0"]
+dev = ["pytest>=8.0", "pytest-cov>=4.1", "ruff>=0.5"]
+
+[project.scripts]
+sas = "sas.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q --strict-markers"
+pythonpath = ["src"]
+markers = [
+    "integration: end-to-end campaign on generated shadow data (still offline)",
+    "slow: kept out of the default PR run",
+    "aws: requires real AWS credentials (never runs in CI)",
+]
+
+[tool.ruff]
+line-length = 110
+extend-exclude = ["infra/cdk/.build", "infra/cdk/cdk.out", ".build"]
+target-version = "py312"
+src = ["src", "tests", "demo", "eval", "infra", "scripts"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "UP", "B", "C4", "SIM", "RET", "ARG", "RUF"]
+# UP042 (StrEnum) is refused on purpose: `(str, Enum)` keeps `str(value)`
+# and f-string rendering stable, and the reports quote those strings.
+ignore = ["ARG002", "ARG004", "RUF012", "SIM108", "B008", "UP042"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "ARG001", "ARG002", "ARG004", "ARG005", "SLF001", "PLC0415"]
+"eval/**" = ["RUF001"]
+"demo/**" = ["RUF001"]
+# A Lambda handler always receives (event, context): `context` is part of the
+# execution contract, not of the logic. Say it once here, not nine times.
+"src/sas/lambdas/**" = ["ARG001"]
+
+[tool.coverage.run]
+source = ["src/sas"]
+omit = ["*/tests/*"]
