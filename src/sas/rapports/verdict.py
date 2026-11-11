@@ -11,7 +11,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from dataclasses import dataclass
 
-from sas.analyseur.classification import compter_par_nature, filtrer_exploration
+from sas.analyseur.classification import compter_par_nature
 from sas.types import Composition, Ecart, Nature, Tentative, Verdict
 
 
@@ -48,7 +48,6 @@ def trancher(
         motifs.append(f"{decouvertes[Nature.HOSTILE]} tentative(s) classée(s) hostile(s)")
         return Decision(Verdict.REFUSE, tuple(conditions), tuple(motifs), decouvertes)
 
-    visibles = filtrer_exploration(tentatives)
     debordements = sum(1 for e in ecarts if e.type.value == "debordement")
     mortes = sum(1 for e in ecarts if e.type.value == "permission_morte")
 

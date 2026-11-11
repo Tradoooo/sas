@@ -11,6 +11,7 @@ ending on a declared destination is therefore never reported.
 
 from __future__ import annotations
 
+import itertools
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
@@ -159,7 +160,7 @@ def _chercher_rejeux(
     for regle in regles:
         if regle.portee != "rejeux":
             continue
-        for premier, second in zip(sessions, sessions[1:], strict=False):
+        for premier, second in itertools.pairwise(sessions):
             ecriture = _premiere(par_session[premier], motifs, "ecriture_configuration")
             relecture = _premiere(par_session[second], motifs, "lecture_configuration")
             if ecriture is None or relecture is None:

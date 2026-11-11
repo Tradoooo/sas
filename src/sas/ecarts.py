@@ -28,8 +28,6 @@ def calculer(
     *,
     declarees: Sequence[str],
     utilisees: Sequence[str] | None = None,
-    acces_inutilises: Sequence[Any] | None = None,
-    source_native_disponible: bool = False,
     graine: int = 0,
 ) -> tuple[Ecart, ...]:
     """Build the gap list. `utilisees` defaults to what the journal shows."""
@@ -72,7 +70,6 @@ def croiser_acces_inutilises(
     acces_inutilises: Sequence[Any],
     *,
     disponible: bool,
-    graine: int = 0,
 ) -> tuple[Ecart, ...]:
     """EF-21 — quote the native source for dead permissions.
 
