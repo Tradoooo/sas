@@ -16,6 +16,7 @@ from sas import aleatoire, constantes
 from sas.identifiants import maintenant, nouveau
 from sas.ombre import donnees
 from sas.ombre.leurres import leurres_par_defaut
+from sas.ombre.support import normaliser
 from sas.types import EnvironnementOmbre, Leurre, Politique, RessourceOmbre
 
 RESSOURCE_TICKETS = "s3://client-tickets-ombre/entree/"
@@ -100,15 +101,23 @@ class GenerateurOmbre:
     def _ressources_declarees(
         self, politique: Politique | None, existantes: tuple[RessourceOmbre, ...]
     ) -> tuple[RessourceOmbre, ...]:
-        """Mirror any declared resource the demo set does not already contain."""
+        """Mirror any declared resource the demo set does not already contain.
+
+        Comparison runs on the **normalised** name: a policy derived in shadow
+        mode carries `client-tickets-ombre/entree` while the replica declares
+        `s3://client-tickets-ombre/entree/`. Without normalising, the same
+        resource is added twice and the empty copy overwrites the filled one.
+        """
         if politique is None:
             return ()
-        connues = {r.ressource for r in existantes} | {leurre.ressource for leurre in self._leurres}
+        connues = {normaliser(r.ressource) for r in existantes} | {
+            normaliser(leurre.ressource) for leurre in self._leurres
+        }
         ajoutees: list[RessourceOmbre] = []
         for regle in politique.regles:
             for ressource in regle.ressources:
-                if ressource and ressource not in connues:
-                    connues.add(ressource)
+                if ressource and normaliser(ressource) not in connues:
+                    connues.add(normaliser(ressource))
                     ajoutees.append(
                         RessourceOmbre(ressource=ressource, type="s3", structure={"contenus": {}}, objets=())
                     )
