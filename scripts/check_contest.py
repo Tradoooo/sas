@@ -167,12 +167,35 @@ def verifier_tracabilite(rapport: Rapport) -> None:
 def verifier_donnees(rapport: Rapport) -> None:
     scenarios = sorted((RACINE / "scenarios").glob("*.yaml")) if (RACINE / "scenarios").is_dir() else []
     rapport.exiger(len(scenarios) >= 8, f"8 scénarios en données ({len(scenarios)} trouvé(s))")
-    regles = sorted((RACINE / "regles").glob("*.yaml")) if (RACINE / "regles").is_dir() else []
-    rapport.exiger(len(regles) >= 3, f"règles de composition en données ({len(regles)} trouvée(s))")
+    rapport.exiger(
+        _nombre_regles_composition() >= 3,
+        f"3 règles de composition en données ({_nombre_regles_composition()} trouvée(s))",
+    )
     agents = sorted((RACINE / "demo/agents").glob("*.py")) if (RACINE / "demo/agents").is_dir() else []
     rapport.exiger(len(agents) >= 4, f"3 agents invités de démonstration ({len(agents)} fichier(s))")
     gen = RACINE / "eval/genere-agents.mjs"
     rapport.preferer(gen.is_file(), "banc d'évaluation généré par script (eval/genere-agents.mjs)")
+
+
+def _nombre_regles_composition() -> int:
+    """Count the composition rules inside the data files, not the files.
+
+    Three motives live in one file (spec §16.2); counting files would report a
+    single rule and fail a correct repository.
+    """
+    dossier = RACINE / "regles"
+    if not dossier.is_dir():
+        return 0
+    total = 0
+    for fichier in sorted(dossier.glob("*.yaml")):
+        try:
+            import yaml
+
+            donnees = yaml.safe_load(fichier.read_text(encoding="utf-8")) or {}
+        except Exception:
+            continue
+        total += len(donnees.get("regles", ()))
+    return total
 
 
 def verifier_ci(rapport: Rapport) -> None:

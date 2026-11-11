@@ -1,0 +1,106 @@
+{
+  "acces": {
+    "cout_par_tenant": [
+      "tenant"
+    ],
+    "registre_flotte": [
+      "tenant",
+      "editeur"
+    ],
+    "tendances_derive": [
+      "tenant"
+    ]
+  },
+  "datasets": [
+    {
+      "colonnes": [
+        "campagne_id",
+        "tenant_id",
+        "agent_id",
+        "manifeste_id",
+        "mode",
+        "n_rejeux",
+        "statut",
+        "debutee_le",
+        "cout_mesure"
+      ],
+      "dimensions": [
+        "tenant_id",
+        "agent_id",
+        "mode"
+      ],
+      "faits": [
+        "cout_mesure"
+      ],
+      "identifiant": "cout_par_tenant",
+      "nom": "Measured cost per tenant",
+      "source": "campagnes"
+    },
+    {
+      "colonnes": [
+        "agent_id",
+        "tenant_id",
+        "editeur_id",
+        "nom",
+        "version_courante",
+        "empreinte",
+        "statut"
+      ],
+      "dimensions": [
+        "tenant_id",
+        "editeur_id",
+        "statut"
+      ],
+      "faits": [],
+      "identifiant": "registre_flotte",
+      "nom": "Fleet registry",
+      "source": "agents"
+    },
+    {
+      "colonnes": [
+        "derive_id",
+        "agent_id",
+        "distance",
+        "alerte_le",
+        "action"
+      ],
+      "dimensions": [
+        "agent_id",
+        "action"
+      ],
+      "faits": [
+        "distance"
+      ],
+      "identifiant": "tendances_derive",
+      "nom": "Drift trends",
+      "source": "derives"
+    }
+  ],
+  "rls": [
+    {
+      "colonne": "tenant_id",
+      "dataset": "cout_par_tenant",
+      "description": "A customer sees only its own measured cost (EF-53).",
+      "role": "tenant"
+    },
+    {
+      "colonne": "editeur_id",
+      "dataset": "registre_flotte",
+      "description": "An editor sees only the agents it publishes (EF-53).",
+      "role": "editeur"
+    },
+    {
+      "colonne": "tenant_id",
+      "dataset": "registre_flotte",
+      "description": "A customer sees only its own agents (EF-53).",
+      "role": "tenant"
+    },
+    {
+      "colonne": "agent_id",
+      "dataset": "tendances_derive",
+      "description": "A customer sees the drift of its own agents only (EF-53).",
+      "role": "tenant"
+    }
+  ],
+  "schema_version": 1
+}
