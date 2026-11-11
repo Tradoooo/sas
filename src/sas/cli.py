@@ -37,6 +37,10 @@ def construire_parseur() -> argparse.ArgumentParser:
     )
     demo.add_argument("--scenarios", default="", help="comma separated scenario ids (default: the eight)")
 
+    portail = sous.add_parser("portail", help="serve the portal and the API on one origin")
+    portail.add_argument("--port", type=int, default=8123)
+    portail.add_argument("--hote", default="127.0.0.1")
+
     return parseur
 
 
@@ -47,6 +51,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.commande == "demo":
         scenarios = tuple(s.strip() for s in args.scenarios.split(",") if s.strip())
         return executer_demo(rejeux=args.rejeux, graine=args.graine, agent=args.agent, scenarios=scenarios)
+    if args.commande == "portail":
+        from sas.cli_portail import servir
+
+        return servir(port=args.port, hote=args.hote)
     return 2
 
 

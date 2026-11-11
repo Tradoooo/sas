@@ -1,0 +1,191 @@
+/* Sas — portal stylesheet. No build step, no CDN, no external font: the page
+   must load offline and identically on a judge's machine. */
+
+:root {
+  --fond: #0f1115;
+  --carte: #171a21;
+  --bord: #262b36;
+  --texte: #e6e8ec;
+  --sourdine: #9aa3b2;
+  --accent: #4da3ff;
+  --vert: #3ecf8e;
+  --orange: #f5a524;
+  --rouge: #f0524d;
+  --violet: #a78bfa;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--fond);
+  color: var(--texte);
+  font: 15px/1.55 ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+}
+
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--bord);
+  background: var(--carte);
+}
+
+.marque { display: flex; align-items: center; gap: 0.9rem; }
+
+.logo {
+  font-size: 2rem;
+  color: var(--accent);
+  line-height: 1;
+}
+
+h1 { margin: 0; font-size: 1.4rem; letter-spacing: 0.02em; }
+
+.sous-titre { margin: 0.15rem 0 0; color: var(--sourdine); font-size: 0.88rem; }
+
+.etat {
+  font-size: 0.85rem;
+  color: var(--sourdine);
+  border: 1px solid var(--bord);
+  border-radius: 999px;
+  padding: 0.25rem 0.75rem;
+  white-space: nowrap;
+}
+
+.etat.ok { color: var(--vert); border-color: var(--vert); }
+.etat.ko { color: var(--rouge); border-color: var(--rouge); }
+
+.avertissement {
+  margin: 0;
+  padding: 0.7rem 1.5rem;
+  background: #1b1a12;
+  border-bottom: 1px solid var(--bord);
+  color: #d9cf9a;
+  font-size: 0.86rem;
+}
+
+main {
+  display: grid;
+  grid-template-columns: minmax(280px, 380px) 1fr;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+
+.colonne { min-width: 0; }
+
+h2 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--sourdine);
+  margin: 1.6rem 0 0.6rem;
+}
+
+h2:first-child { margin-top: 0; }
+
+table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+
+th, td {
+  text-align: left;
+  padding: 0.4rem 0.55rem;
+  border-bottom: 1px solid var(--bord);
+}
+
+th { color: var(--sourdine); font-weight: 600; font-size: 0.78rem; text-transform: uppercase; }
+
+form { display: grid; gap: 0.7rem; }
+
+label { display: grid; gap: 0.25rem; font-size: 0.85rem; color: var(--sourdine); }
+
+select, input, button {
+  font: inherit;
+  color: var(--texte);
+  background: var(--fond);
+  border: 1px solid var(--bord);
+  border-radius: 6px;
+  padding: 0.45rem 0.6rem;
+}
+
+select[multiple] { padding: 0.3rem; }
+
+button {
+  cursor: pointer;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #08111d;
+  font-weight: 650;
+}
+
+button:disabled { opacity: 0.55; cursor: progress; }
+
+button[data-langue] { background: var(--carte); color: var(--sourdine); border-color: var(--bord); font-weight: 500; }
+button[data-langue].actif { color: var(--texte); border-color: var(--accent); }
+
+.verdict {
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  border: 1px solid var(--bord);
+  background: var(--carte);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.95rem;
+}
+
+.verdict.homologue { color: var(--vert); border-color: var(--vert); }
+.verdict.homologue_sous_conditions { color: var(--orange); border-color: var(--orange); }
+.verdict.refuse { color: var(--rouge); border-color: var(--rouge); }
+.verdict.non_mesurable { color: var(--violet); border-color: var(--violet); }
+
+.grille {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.7rem;
+  margin-top: 1rem;
+}
+
+.carte {
+  background: var(--carte);
+  border: 1px solid var(--bord);
+  border-radius: 8px;
+  padding: 0.7rem 0.8rem;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.chiffre { font-size: 1.5rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.legende { font-size: 0.75rem; color: var(--sourdine); }
+
+.note { color: var(--sourdine); font-size: 0.85rem; }
+
+ul { padding-left: 1.2rem; font-size: 0.88rem; }
+
+pre {
+  background: #0b0d11;
+  border: 1px solid var(--bord);
+  border-radius: 8px;
+  padding: 0.9rem;
+  overflow-x: auto;
+  font: 12.5px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.onglets { display: flex; gap: 0.4rem; margin-bottom: 0.5rem; }
+
+footer {
+  border-top: 1px solid var(--bord);
+  padding: 1.5rem;
+  color: var(--sourdine);
+  font-size: 0.86rem;
+}
+
+footer h2 { margin-top: 0; }
+footer p { margin-bottom: 0; }
+
+.filtre { color: var(--sourdine); text-decoration: line-through; }
