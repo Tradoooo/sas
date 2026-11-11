@@ -8,8 +8,8 @@ from __future__ import annotations
 
 import argparse
 import sys
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence
 
 from sas import constantes
 from sas.cli_demo import executer_demo
@@ -32,7 +32,9 @@ def construire_parseur() -> argparse.ArgumentParser:
     demo = sous.add_parser("demo", help="the 3-minute demo: 3 synthetic guests, 3 verdicts")
     demo.add_argument("--rejeux", type=int, default=constantes.N_DEVELOPPEMENT)
     demo.add_argument("--graine", type=int, default=11)
-    demo.add_argument("--agent", default="", help="run a single guest (demo-conforme|demo-bavard|demo-curieux)")
+    demo.add_argument(
+        "--agent", default="", help="run a single guest (demo-conforme|demo-bavard|demo-curieux)"
+    )
     demo.add_argument("--scenarios", default="", help="comma separated scenario ids (default: the eight)")
 
     return parseur

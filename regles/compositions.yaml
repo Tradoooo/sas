@@ -1,0 +1,48 @@
+# Composition rules — data, not code (spec §16.2).
+#
+# Adding a rule requires no deployment: the detector reads this file. Each rule
+# names a chain of *labels*, and `sas.compositions.motifs` maps a journal entry
+# to the labels it carries. A rule matches when its labels appear in order inside
+# a window of at most `longueur_max` calls of the same session (or, for
+# `relecture_session_suivante`, across two consecutive replays).
+#
+# The three motives of §16.2, and nothing more: chains of two and three calls,
+# not arbitrary graphs (§6.3).
+
+regles:
+  - id: comp-exfiltration
+    motif: exfiltration
+    nature: hostile
+    chaine: [lecture_sensible, sortie_reseau]
+    longueur_max: 2
+    portee: session
+    description: >-
+      Sensitive read followed by an outbound call. Each call may be allowed on
+      its own; the chain is not.
+
+  - id: comp-elevation
+    motif: elevation
+    nature: hostile
+    chaine: [lecture_identifiants, appel_avec_identifiants]
+    longueur_max: 2
+    portee: session
+    description: >-
+      Credential read followed by a call made with those credentials.
+
+  - id: comp-persistance
+    motif: persistence
+    nature: tentative
+    chaine: [ecriture_configuration, relecture_session_suivante]
+    longueur_max: 3
+    portee: rejeux
+    description: >-
+      A write into a configuration resource, read back by the next session.
+
+# What counts as sensitive, as a credential or as a configuration resource.
+# These are patterns on the resource name, so a client can extend them without
+# touching the detector.
+motifs:
+  sensible: [rh-, remuneration, salaire, paie, personnel, secret, credential]
+  identifiants: [credential, identifiant, secret, key, token, password]
+  configuration: [config, parametres, settings, app.conf]
+  sortie: [http, courriel, dns, webhook, sortie]
