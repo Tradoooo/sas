@@ -19,7 +19,7 @@ from typing import Any
 from sas.analyseur.agregation import Agregat
 from sas.identifiants import nouveau
 from sas.ombre.support import normaliser
-from sas.types import Ecart, TypeEcart
+from sas.types import Ecart, Mode, TypeEcart
 
 
 def calculer(
@@ -41,8 +41,8 @@ def calculer(
                     campagne_id=campagne_id,
                     type=TypeEcart.DEBORDEMENT,
                     ressource=ressource,
-                    declaree=False,
-                    observee=True,
+                    declare=False,
+                    observe=True,
                     frequence=int(agregat.ressources.get(ressource, 0)),
                     source="journal",
                 )
@@ -55,8 +55,8 @@ def calculer(
                     campagne_id=campagne_id,
                     type=TypeEcart.PERMISSION_MORTE,
                     ressource=ressource,
-                    declaree=True,
-                    observee=False,
+                    declare=True,
+                    observe=False,
                     frequence=0,
                     source="journal",
                 )
@@ -90,8 +90,8 @@ def croiser_acces_inutilises(
                     campagne_id=campagne_id,
                     type=ecart.type,
                     ressource=ecart.ressource,
-                    declaree=ecart.declaree,
-                    observee=ecart.observee,
+                    declare=ecart.declare,
+                    observe=ecart.observe,
                     frequence=ecart.frequence,
                     source="iam-access-analyzer",
                 )
@@ -109,9 +109,19 @@ def permissions_mortes(ecarts: Sequence[Ecart]) -> tuple[Ecart, ...]:
     return tuple(e for e in ecarts if e.type is TypeEcart.PERMISSION_MORTE)
 
 
-def ressources_declarees_depuis(manifeste: Any) -> tuple[str, ...]:
-    """The declared resources, normalised the way the journal records them."""
-    return tuple({normaliser(d.ressource) for d in manifeste.donnees_demandees})
+def ressources_declarees_depuis(manifeste: Any, mode: Mode = Mode.OMBRE) -> tuple[str, ...]:
+    """The declared resources, in the naming the journal actually records.
+
+    In shadow mode the guest touches the **replica** (spec 10.1), so the declared
+    perimeter must be mapped onto the replica before comparing: otherwise every
+    legitimate call would be reported as an overflow and every declaration as a
+    dead permission, which is precisely the false signal this report must not
+    produce.
+    """
+    from sas.ombre.replication import table_repliquees
+
+    declarees = tuple({normaliser(d.ressource) for d in manifeste.donnees_demandees})
+    return table_repliquees(declarees) if mode is Mode.OMBRE else declarees
 
 
 def ressources_observees(agregat: Agregat) -> tuple[str, ...]:

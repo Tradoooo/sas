@@ -20,7 +20,7 @@ from typing import Any
 from sas.identifiants import nouveau
 from sas.types import Composition, MotifComposition, Nature
 
-RACINE = Path(__file__).resolve().parents[2]
+RACINE = Path(__file__).resolve().parents[3]
 FICHIER_DEFAUT = RACINE / "regles" / "compositions.yaml"
 
 

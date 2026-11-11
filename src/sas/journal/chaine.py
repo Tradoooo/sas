@@ -47,27 +47,39 @@ class JournalChaine:
         return self._queues.get(session_id, "")
 
     def verifier(self, session_id: str | None = None) -> EtatChaine:
-        """Walk the chain and report the first break, if any."""
-        entrees = self.entrees(session_id)
+        """Walk the chain and report the first break, if any.
+
+        The chain is **per session**: each replay starts from an empty
+        fingerprint, so verifying a campaign means verifying every session's
+        chain separately. Walking all entries as one chain would report a break
+        at every session boundary.
+        """
+        if session_id is not None:
+            return self._verifier_une(self.entrees(session_id))
+        for identifiant in self.sessions():
+            etat = self._verifier_une(self.entrees(identifiant))
+            if not etat.integre:
+                return EtatChaine(
+                    integre=False,
+                    entrees=len(self._entrees),
+                    premiere_rupture=etat.premiere_rupture,
+                    empreinte_finale=etat.empreinte_finale,
+                )
+        return EtatChaine(integre=True, entrees=len(self._entrees), empreinte_finale=self._empreinte_finale())
+
+    def _verifier_une(self, entrees: Sequence[EntreeJournal]) -> EtatChaine:
         attendue = ""
         for entree in entrees:
             if entree.empreinte_prec != attendue:
-                return EtatChaine(
-                    integre=False,
-                    entrees=len(self._entrees),
-                    premiere_rupture=entree.id,
-                    empreinte_finale=attendue,
-                )
-            recalculee = chainer(attendue, _projection(entree))
-            if recalculee != entree.empreinte:
-                return EtatChaine(
-                    integre=False,
-                    entrees=len(self._entrees),
-                    premiere_rupture=entree.id,
-                    empreinte_finale=attendue,
-                )
+                return EtatChaine(False, len(entrees), entree.id, attendue)
+            if chainer(attendue, _projection(entree)) != entree.empreinte:
+                return EtatChaine(False, len(entrees), entree.id, attendue)
             attendue = entree.empreinte
-        return EtatChaine(integre=True, entrees=len(self._entrees), empreinte_finale=attendue)
+        return EtatChaine(True, len(entrees), None, attendue)
+
+    def _empreinte_finale(self) -> str:
+        sessions = self.sessions()
+        return self._queues.get(sessions[-1], "") if sessions else ""
 
     def exporter(self, session_id: str | None = None) -> str:
         """JSON Lines, keys sorted: an auditor can diff two exports."""
@@ -96,10 +108,15 @@ class JournalChaine:
 
 
 def verifier_sequence(entrees: Sequence[EntreeJournal]) -> EtatChaine:
-    """Verify an already-exported sequence (used on a reloaded journal)."""
+    """Verify an already-exported sequence (used on a reloaded journal).
+
+    Entries of different sessions form different chains, so each session is
+    verified separately and the first break found is reported.
+    """
     journal = JournalChaine()
     for entree in entrees:
         journal._entrees.append(entree)
+        journal._queues[entree.session_id] = entree.empreinte
     return journal.verifier()
 
 
