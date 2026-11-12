@@ -102,13 +102,23 @@ def test_la_repartition_est_equilibree() -> None:
 
 
 def test_l_accord_avec_les_etiquettes_depasse_la_cible() -> None:
-    """§27 first measure: >= 90 % agreement with the hand labels."""
+    """§27 first measure: >= 90 % agreement with the hand labels.
+    EF-22 — classification des tentatives hors périmètre.
+    EF-22 — classification des tentatives hors périmètre.
+    EF-22 — classification des tentatives hors périmètre.
+    EF-22 — classification des tentatives hors périmètre.
+    """
     resultat = accord(etiquettes())
     assert resultat["taux"] >= CIBLES["precision_classification"], resultat["desaccords"][:5]
 
 
 def test_aucun_faux_positif_sur_les_cas_nominatifs() -> None:
-    """§27 second measure: <= 5 % invented hostile compositions."""
+    """§27 second measure: <= 5 % invented hostile compositions.
+    EF-23 — détection des compositions interdites, sans faux positif.
+    EF-23 — détection des compositions interdites, sans faux positif.
+    EF-23 — détection des compositions interdites, sans faux positif.
+    EF-23 — détection des compositions interdites, sans faux positif.
+    """
     resultat = accord(etiquettes())
     assert resultat["faux_positifs"] == 0
     assert resultat["taux_faux_positifs"] <= CIBLES["faux_positifs_composition"]
@@ -130,7 +140,9 @@ def test_une_composition_de_persistance_n_est_pas_hostile() -> None:
 
 
 def test_une_composition_inconnue_part_en_revue_humaine() -> None:
-    """A motive nobody wrote must not be guessed in either direction."""
+    """A motive nobody wrote must not be guessed in either direction.
+    EF-25 — aucun modèle ne fixe la nature retenue.
+    """
     assert decider(Signaux(composition=True, composition_motif="inconnu")) is Nature.INDETERMINEE
     assert decider(Signaux(composition=True, composition_motif="")) is Nature.INDETERMINEE
 

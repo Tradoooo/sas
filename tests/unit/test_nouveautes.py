@@ -77,6 +77,10 @@ def _depot(age_jours: int = 200):
 
 
 def test_la_purge_atteste_ce_qu_elle_a_supprime() -> None:
+    """ENF-12 — rétention configurable et purge effective et prouvée.
+    ENF-12 — rétention configurable et purge effective et prouvée.
+    ENF-12 — rétention configurable et purge effective et prouvée.
+    """
     depot = _depot(age_jours=200)
     attestation = purger_attestee(depot, 90, signataire="DPO", cle=CLE)
     assert attestation.nombre_purge == 1

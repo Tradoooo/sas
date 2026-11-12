@@ -55,6 +55,7 @@ def test_le_tenant_vient_du_jeton() -> None:
 
 
 def test_un_role_qui_ne_peut_rien_lire_est_refuse() -> None:
+    """EF-53 — un éditeur ne voit que son propre rapport d'écart."""
     from sas.auth import autoriser
 
     jeton = emettre("tenant-a", "editeur", "Éditeur", editeur_id="ed-1")
