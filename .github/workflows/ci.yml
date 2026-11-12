@@ -57,6 +57,16 @@ jobs:
       - name: Size guard (< 500 lines / < 50 per function)
         run: python3 scripts/check_limits.py
 
+      - name: Generated documents are up to date
+        # The acceptance matrix (spec §29) and the published API contract are
+        # generated. A stale one is a document that lies about the code, so the
+        # guard fails the build instead of shipping it.
+        run: |
+          python3 scripts/genere_recette.py --verifier
+          if [ -f scripts/genere_openapi.py ]; then
+            python3 scripts/genere_openapi.py --verifier
+          fi
+
       - name: Tests
         run: python3 -m pytest -m "not slow and not aws" --maxfail=20
 
