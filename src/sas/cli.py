@@ -53,6 +53,15 @@ def construire_parseur() -> argparse.ArgumentParser:
     attestation.add_argument("--sortie", default="", help="output file (default: <numero>.pdf|.html)")
     attestation.add_argument("--derniere", action="store_true", help="accepted for symmetry; no store yet")
 
+    mcp = sous.add_parser(
+        "mcp",
+        help="expose the gateway as an MCP server on stdio (any MCP agent plugs in)",
+    )
+    mcp.add_argument("manifeste", help="chemin du manifeste signé (YAML ou JSON)")
+    mcp.add_argument("--mode", default="ombre", choices=("ombre", "observe"))
+    mcp.add_argument("--tenant", default="tenant-demo")
+    mcp.add_argument("--graine", type=int, default=0)
+
     return parseur
 
 
@@ -78,6 +87,20 @@ def main(argv: Sequence[str] | None = None) -> int:
             langue=args.langue,
             sortie=args.sortie,
             fmt=args.fmt,
+        )
+    if args.commande == "mcp":
+        from sas.mcp.serveur import main as mcp_main
+
+        return mcp_main(
+            [
+                args.manifeste,
+                "--mode",
+                args.mode,
+                "--tenant",
+                args.tenant,
+                "--graine",
+                str(args.graine),
+            ]
         )
     return 2
 
