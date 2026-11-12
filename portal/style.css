@@ -211,3 +211,37 @@ footer p { margin-bottom: 0; }
 
 #registre tbody tr { cursor: pointer; }
 #registre tbody tr:hover { background: var(--carte); }
+
+/* The registry prints the verdict as a label, never as an enum value. */
+.statut.homologue { color: var(--vert); }
+.statut.homologue_sous_conditions { color: var(--orange); }
+.statut.refuse { color: var(--rouge); }
+.statut.non_mesurable { color: var(--violet); }
+
+/* --- small screens: nothing may overflow horizontally --------------------- */
+@media (max-width: 700px) {
+  header { flex-wrap: wrap; }
+
+  .etat {
+    white-space: normal;
+    max-width: 100%;
+    flex: 1 1 100%;
+    text-align: center;
+  }
+
+  /* A table wider than the viewport scrolls inside its own box instead of
+     widening the page: the reader keeps a stable layout and finds the rest by
+     sliding, rather than discovering a sideways-scrolling document. */
+  table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  pre { font-size: 11.5px; }
+
+  main { padding: 1rem; gap: 1rem; }
+
+  .grille { grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); }
+}

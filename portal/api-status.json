@@ -1,0 +1,4 @@
+{
+  "mode": "statique",
+  "pourquoi": "GitHub Pages sert des fichiers statiques : aucun moteur Python derrière cette URL. Les chiffres affichés viennent de data/demo.json, produit par une exécution réelle du moteur. Pour une campagne en direct : make portail en local."
+}

@@ -14,7 +14,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from sas import constantes
+from sas import constantes, libelles
 from sas.auth import autoriser, deriver, emettre
 from sas.cli_partage import charger_contexte
 from sas.homologation import Dossier, analyser, resume
@@ -79,6 +79,7 @@ def creer_app(service: ServiceSas | None = None) -> Any:
     _routes_mesures(app, service)
     _routes_surveillance(app, service)
     _routes_livrables(app, service)
+    _routes_sante(app, service)
     return app
 
 
@@ -273,6 +274,21 @@ def _routes_livrables(app: Any, service: ServiceSas) -> None:
         autoriser(ctx, "budget")
         return service.depot(ctx).cout_cumule()
 
+
+def _routes_sante(app: Any, service: ServiceSas) -> None:
+    """Unauthenticated probes: what the portal reads before anything else."""
+
+    @app.get("/api-status.json")
+    def api_status():
+        """Mode probe the portal reads FIRST.
+
+        A static GitHub Pages deployment serves the committed file, which says
+        "statique". Probing `/health` instead would 404 on Pages and leave an
+        error in the reader's console — an unexplained 404 on a demo page is
+        noise, and noise is a defect.
+        """
+        return {"mode": "direct"}
+
     @app.get("/health")
     def health():
         # The demo token is handed out on purpose: this portal is a public
@@ -282,6 +298,7 @@ def _routes_livrables(app: Any, service: ServiceSas) -> None:
             "statut": "ok",
             "campagnes": len(service.dossiers),
             "jeton_demo": emettre("tenant-demo", "analyste_msp", "Analyste MSP"),
+            "libelles": libelles.tous(),
         }
 
 
