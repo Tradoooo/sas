@@ -77,9 +77,19 @@ def trancher(
 
 
 def grouper(tentatives: Iterable[TentativeBrute]) -> dict[str, list[TentativeBrute]]:
-    """Attempts grouped by targeted resource, across every replay."""
+    """Attempts grouped by targeted resource, across every replay.
+
+    Only **perimeter** denials are classified (§13). A denial caused by a bound —
+    budget spent, duration reached, suspension — is the airlock doing its job,
+    not the agent asking for something it was not granted; counting it as an
+    attempt would invent a finding (the false positive §16.3 forbids).
+    """
+    from sas.agentcore.politique_manifeste import est_hors_perimetre
+
     groupes: dict[str, list[TentativeBrute]] = defaultdict(list)
     for tentative in tentatives:
+        if not est_hors_perimetre(tentative.regle):
+            continue
         groupes[tentative.ressource].append(tentative)
     return dict(sorted(groupes.items()))
 

@@ -24,15 +24,22 @@
   d'éditeur. Tout tourne hors ligne sur le backend local.
 </p>
 
+<div id="mode-bandeau" class="mode-bandeau cache">chargement…</div>
+
 <main>
   <section class="colonne gauche">
     <h2>Registre de flotte</h2>
+    <p class="note">Cliquer sur une ligne affiche la campagne de cet agent.</p>
     <table id="registre">
       <thead><tr><th>Agent</th><th>Version</th><th>Statut</th></tr></thead>
       <tbody></tbody>
     </table>
 
     <h2>Lancer une homologation</h2>
+    <p class="note">
+      Disponible en <strong>mode direct</strong> seulement (l'API répond). En mode
+      statique, lancez <code>make demo</code> en local.
+    </p>
     <form id="formulaire">
       <label>Agent invité
         <select id="agent">
@@ -66,6 +73,7 @@
   <section class="colonne droite">
     <h2>Résultat de la campagne</h2>
     <div id="verdict" class="verdict">—</div>
+    <p class="note" id="conditions">—</p>
 
     <div class="grille">
       <div class="carte"><span class="chiffre" id="sessions">–</span><span class="legende">sessions isolées</span></div>
