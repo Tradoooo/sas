@@ -1,9 +1,10 @@
-"""Homologation scenarios, loaded from data (spec annexe B, §6.3).
+"""Scenarios: loading, validation and the entry the guest receives.
 
-A scenario is a **file**, not code: adding one requires no deployment and no
-change here (R23). Eight ship with the product; the loader accepts any number.
-
-Public surface of lot 4. Other lots import `sas.scenarios`.
+A scenario is **data**: adding one requires no code (R23). That freedom has a
+price — a typo in a key is invisible, because the loader ignores what it does
+not know. The validator therefore refuses unknown keys: a scenario that says
+`sensitive: true` where the code reads `sensible` must be rejected, not silently
+understood as "not sensitive".
 """
 
 from __future__ import annotations
@@ -18,10 +19,35 @@ from sas.manifeste.schema import probleme
 from sas.types import ProblemeValidation, RapportValidation
 
 RACINE_DEFAUT = Path(__file__).resolve().parents[2] / "scenarios"
+# Business scenarios: a client's own use cases, next to the official eight.
+RACINE_METIER = RACINE_DEFAUT / "metier"
 
 SENSIBILITES: tuple[str, ...] = ("ordinaire", "elevee")
 DISCRIMINANTS: tuple[str, ...] = ("S4", "S5", "S8")
 NON_REGRESSION: tuple[str, ...] = ("S1", "S3")
+
+# The keys a scenario may carry. Anything else is a typo, and a typo in a data
+# file is a silent failure: the loader would ignore it and the scenario would
+# mean something else from what its author wrote.
+CLES_SCENARIO: frozenset[str] = frozenset(
+    {
+        "id",
+        "nom",
+        "description",
+        "sensibilite",
+        "discriminant",
+        "non_regression",
+        "leurres",
+        "budget_appels",
+        "appels_attendus",
+        "entrees",
+        "resultats_attendus",
+    }
+)
+CLES_ENTREE: frozenset[str] = frozenset({"id", "contenu", "injection", "sensible", "ressources"})
+CLES_RESULTAT: frozenset[str] = frozenset(
+    {"id", "description", "outils", "outils_interdits", "sortie_autorisee", "tache_ouverte"}
+)
 
 
 class ErreurScenario(Exception):
@@ -65,6 +91,10 @@ class Scenario:
     appels_attendus: tuple[int, int] = (0, 0)
     budget_appels: int = 0
     source: str = ""
+    # Keys the file carried that the code does not know. A typo in a data file
+    # is a silent failure: the loader would ignore it and the scenario would mean
+    # something else from what its author wrote.
+    cles_inconnues: tuple[str, ...] = ()
 
 
 def charger(chemin: str | Path) -> Scenario:
@@ -76,17 +106,44 @@ def charger(chemin: str | Path) -> Scenario:
 
 
 def charger_tous(dossier: str | Path | None = None) -> tuple[Scenario, ...]:
-    """Every scenario of a directory, sorted by identifier."""
+    """Every OFFICIAL scenario of a directory, sorted by identifier.
+
+    A file whose name starts with an underscore is an example, not a scenario:
+    it is skipped, so a demonstration file can live next to the real ones
+    without ever being replayed by accident. Business scenarios live in their own
+    directory and are read by `charger_metier`.
+    """
     racine = Path(dossier) if dossier is not None else RACINE_DEFAUT
     if not racine.is_dir():
         raise ErreurScenario(f"dossier de scénarios introuvable: {racine}")
-    fichiers = sorted(list(racine.glob("*.yaml")) + list(racine.glob("*.yml")) + list(racine.glob("*.json")))
+    fichiers = [
+        chemin
+        for chemin in sorted(
+            list(racine.glob("*.yaml")) + list(racine.glob("*.yml")) + list(racine.glob("*.json"))
+        )
+        if not chemin.name.startswith("_")
+    ]
+    return tuple(charger(f) for f in fichiers)
+
+
+def charger_metier(dossier: str | Path | None = None) -> tuple[Scenario, ...]:
+    """The business scenarios: a client's own use cases, next to the official ones.
+
+    They are replayed exactly like the official scenarios — the airlock does not
+    distinguish them — but they are kept apart so the inventory of the
+    specification stays what it is (§6.3).
+    """
+    racine = Path(dossier) if dossier is not None else RACINE_METIER
+    if not racine.is_dir():
+        return ()
+    fichiers = sorted(racine.glob("*.yaml"))
     return tuple(charger(f) for f in fichiers)
 
 
 def valider(scenario: Scenario) -> RapportValidation:
     """A scenario that cannot be replayed as declared is refused."""
     problemes: list[ProblemeValidation] = []
+    problemes += _verifier_cles(scenario)
     problemes += _verifier_identite(scenario)
     problemes += _verifier_entrees(scenario)
     problemes += _verifier_resultats(scenario)
@@ -95,11 +152,26 @@ def valider(scenario: Scenario) -> RapportValidation:
     return RapportValidation(not problemes, tuple(problemes))
 
 
+def _verifier_cles(scenario: Scenario) -> list[ProblemeValidation]:
+    """A key the code does not know is a typo, and a typo is a silent failure."""
+    trouves: list[ProblemeValidation] = []
+    for cle in scenario.cles_inconnues:
+        trouves.append(
+            probleme(
+                cle,
+                "cle-inconnue",
+                f"la clé « {cle} » n'existe pas dans le format de scénario",
+                f"Utiliser une des clés connues : {', '.join(sorted(CLES_SCENARIO))}.",
+            )
+        )
+    return trouves
+
+
 def entree_pour(scenario: Scenario, graine: int, numero_rejeu: int) -> dict[str, Any]:
     """What the guest agent receives for one replay.
 
     Dispersion comes from the seed and the replay number (§14.6): the same
-    (seed, replay) always produces the same input, and two replays of the same
+    (seed, replay) always gives the same input, and two replays of the same
     scenario do not.
     """
     flux = f"{scenario.id}:{graine}:{numero_rejeu}"
@@ -121,6 +193,11 @@ def entree_pour(scenario: Scenario, graine: int, numero_rejeu: int) -> dict[str,
 def officiels() -> tuple[str, ...]:
     """The eight identifiers of annexe B."""
     return constantes.SCENARIOS_LANCES
+
+
+def identifiers(scenarios: Sequence[Scenario]) -> tuple[str, ...]:
+    """The identifiers of a set of scenarios, in order."""
+    return tuple(scenario.id for scenario in scenarios)
 
 
 # --------------------------------------------------------------------------- #
@@ -162,6 +239,7 @@ def _construire(d: Mapping[str, Any], *, source: str = "") -> Scenario:
         appels_attendus=(int(attendus[0]), int(attendus[1])),
         budget_appels=int(d.get("budget_appels", 0)),
         source=source,
+        cles_inconnues=_cles_inconnues(d, CLES_SCENARIO),
     )
 
 
@@ -195,6 +273,10 @@ def _dict_entree(entree: EntreeScenario) -> dict[str, Any]:
         "sensible": entree.sensible,
         "ressources": list(entree.ressources),
     }
+
+
+def _cles_inconnues(donnees: Mapping[str, Any], connues: frozenset[str]) -> tuple[str, ...]:
+    return tuple(sorted(cle for cle in donnees if cle not in connues))
 
 
 def _verifier_identite(s: Scenario) -> list[ProblemeValidation]:
@@ -330,7 +412,3 @@ def _verifier_classement(s: Scenario) -> list[ProblemeValidation]:
             )
         )
     return trouves
-
-
-def identifiers(scenarios: Sequence[Scenario]) -> tuple[str, ...]:
-    return tuple(s.id for s in scenarios)

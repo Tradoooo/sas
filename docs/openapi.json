@@ -502,6 +502,23 @@
         "summary": "Health"
       }
     },
+    "/journal-acces": {
+      "get": {
+        "description": "Who consulted what (idea 85).\n\nNot part of the frozen inventory of §23 — it is an operational route the\nportal needs, and it is scoped like the others: the role decides, and\nthe log proves the rule was applied.",
+        "operationId": "journal_acces_journal_acces_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Journal Acces"
+      }
+    },
     "/manifestes": {
       "post": {
         "operationId": "deposer_manifestes_post",

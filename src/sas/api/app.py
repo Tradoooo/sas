@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from sas import constantes, libelles
+from sas.api.acces import JournalAcces
 from sas.auth import autoriser, deriver, emettre
 from sas.cli_partage import charger_contexte
 from sas.homologation import Dossier, analyser, resume
@@ -35,6 +36,7 @@ class ServiceSas:
     tenants: dict[str, DepotLocal] = field(default_factory=dict)
     dossiers: dict[str, Dossier] = field(default_factory=dict)
     users: dict[str, ContexteTenant] = field(default_factory=dict)
+    journal_acces: JournalAcces = field(default_factory=JournalAcces)
 
     def depot(self, contexte: ContexteTenant) -> DepotLocal:
         verifier_acces(self._depot_de(contexte.tenant_id), contexte)
@@ -288,6 +290,18 @@ def _routes_sante(app: Any, service: ServiceSas) -> None:
         noise, and noise is a defect.
         """
         return {"mode": "direct"}
+
+    @app.get("/journal-acces")
+    def journal_acces(ctx: ContexteTenant = Depends(_contexte)):
+        """Who consulted what (idea 85).
+
+        Not part of the frozen inventory of §23 — it is an operational route the
+        portal needs, and it is scoped like the others: the role decides, and
+        the log proves the rule was applied.
+        """
+        autoriser(ctx, "registre")
+        service.journal_acces.enregistrer(ctx, "journal-acces", "lire")
+        return {"acces": service.journal_acces.resume(ctx.tenant_id)}
 
     @app.get("/health")
     def health():

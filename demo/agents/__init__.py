@@ -16,6 +16,7 @@ from typing import Any
 from demo.agents.bavard import DemoBavard
 from demo.agents.conforme import DemoConforme
 from demo.agents.curieux import DemoCurieux
+from demo.agents.evasion import DemoEvasion
 from demo.agents.opaque import AgentNonInstrumentable, DemoOpaque
 from sas.agentcore.ports import AgentInvite
 
@@ -23,6 +24,7 @@ AGENTS: dict[str, type] = {
     "demo-conforme": DemoConforme,
     "demo-bavard": DemoBavard,
     "demo-curieux": DemoCurieux,
+    "demo-evasion": DemoEvasion,
     "demo-opaque": DemoOpaque,
 }
 
