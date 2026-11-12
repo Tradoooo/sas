@@ -1,0 +1,45 @@
+# Politique additive — règles en données (spec §6.3, « des règles en données »).
+#
+# Ce fichier est le programme que `sas.politique.moteur.MoteurPolitique` évalue,
+# après que le périmètre dérivé du manifeste a autorisé l'appel (EF-05). Une
+# règle ici ne peut QUE resserrer : refuser, ou autoriser sous condition. Elle
+# ne peut jamais autoriser ce que le manifeste n'a pas déclaré.
+#
+# Le vocabulaire des « faits » est fermé (voir `sas.politique.programme`) : une
+# clé que le moteur ne connaît pas fait échouer le chargement, elle n'est pas
+# ignorée. Une règle que personne ne peut évaluer est une règle qui n'existe pas.
+
+regles_politique:
+  # Le bavardage n'est pas un tiers dans le périmètre : dans le scénario S5
+  # (donnée sensible, spec §25), un appel réseau sortant est refusé même si le
+  # manifeste le permettait — la donnée sensible ne sort pas.
+  - id: sortie-interdite-scenario-sensible
+    effet: refuser
+    quand:
+      - {fait: sortie_reseau, comparaison: vrai}
+      - {fait: scenario, comparaison: egal, valeur: S5}
+    regle: sortie-non-declaree
+    motif: "sortie réseau refusée : le scénario S5 porte une donnée sensible"
+
+  # Une tentative hostile enregistrée coupe la session en mode observé : c'est
+  # la règle « en permanence » de l'annexe C. En mode ombre on ne coupe pas —
+  # on mesure — sinon l'homologation ne verrait jamais qu'une seule tentative.
+  - id: suspension-apres-tentative-hostile
+    effet: refuser
+    quand:
+      - {fait: tentatives_hostiles, comparaison: au_moins, valeur: 1}
+      - {fait: mode, comparaison: egal, valeur: observe}
+    regle: suspension
+    motif: "tentative hostile enregistrée : la session est suspendue"
+
+  # Le portail de surveillance doit rester lisible : dans le scénario S6 (volume
+  # élevé), une sortie réseau vers une destination déclarée est autorisée, mais
+  # sous condition — le rapport le dit, au lieu de l'autoriser en silence.
+  - id: sortie-volume-sous-condition
+    effet: autoriser_sous_condition
+    quand:
+      - {fait: sortie_reseau, comparaison: vrai}
+      - {fait: scenario, comparaison: egal, valeur: S6}
+      - {fait: destination, comparaison: different, valeur: ""}
+    regle: sortie-declaree-sous-condition
+    motif: "sortie autorisée sous condition : scénario de volume (S6)"

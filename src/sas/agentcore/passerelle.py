@@ -262,6 +262,12 @@ class GatewayLocal:
             plafond_arret=_plafond(budgets),
         )
         cadre.moteur = self._moteur
+        # Lot 6 : the configurable engine is scenario-scoped. A plain
+        # `PolicyLocale` has no `pour_scenario`; asking it would be a bug, so
+        # the engine stays as-is unless it knows how to scope itself.
+        pour_scenario = getattr(self._moteur, "pour_scenario", None)
+        if pour_scenario is not None:
+            cadre.moteur = pour_scenario(session.scenario_id)
         self._cadres[session.id] = cadre
         return cadre
 
