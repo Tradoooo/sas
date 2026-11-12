@@ -372,6 +372,7 @@ the data model exist but the AWS-backed implementation does not run here.
 | `src/sas/agentcore/local.py` (Runtime, Identity, Memory) | **implemented, measured** — isolated sessions, ephemeral identities with revocation, cross-replay memory only when declared |
 | `src/sas/agentcore/passerelle.py` (Gateway) | **implemented, measured** — single choke point; policy evaluated before the tool; every call journalled, denials included |
 | `src/sas/agentcore/politique_manifeste.py` (Policy) | **implemented, measured** — annexe C evaluated in order on structured facts; derived from the manifest, never hand-written |
+| `src/sas/politique/` (configurable engine) | **implemented, measured** — the client's policy as data (`regles/politique.yaml`), additively on the manifest perimeter: a rule may refuse (narrow, never widen) or authorise under a condition (`Decision.AUTORISE_SOUS_CONDITION`); scenario-scoped; a rule the loader cannot evaluate is refused, not ignored |
 | `src/sas/agentcore/observabilite.py` | **implemented, measured** — chain verification per session, JSON-Lines export, measured cost |
 | `src/sas/agentcore/aws.py` (real AgentCore) | **written, not wired** — the six ports implemented against `boto3`/`bedrock-agentcore` with lazy imports; `backend_aws()` raises an explicit error without credentials. No test calls AWS |
 | `src/sas/agentcore/fabrique.py` | **implemented** — prefers lot 6's configurable engine when present, else `PolicyLocale`; `SAS_BACKEND=aws` selects the real backend |
@@ -383,6 +384,17 @@ the data model exist but the AWS-backed implementation does not run here.
 | `src/sas/orchestrateur/` | **implemented, measured** — N replays x scenarios, isolated sessions, clean stop on budget, kill switch, in-process loop standing in for Step Functions |
 | `src/sas/arret.py` | **implemented, measured** — budget counters, kill switch, the two controlled stops |
 | `src/sas/journal/chaine.py` | **implemented, measured** — append-only, chained per session, exportable, retention purge |
+| `src/sas/journal/export.py` + `audit.py` | **implemented, measured** — the export carries its own verification algorithm, so an auditor recomputes the chain with the standard library alone; the audit names the broken entry |
+| `src/sas/audit.py` | **implemented, measured** — the sealed archive for a handover (chained journal, attestation, report, fingerprint manifest). It does **not** encrypt: the standard library has no authenticated cipher, so confidentiality is delegated to KMS and the manifest says so |
+| `src/sas/store/purge.py` | **implemented, measured** — the attested purge (ENF-12): what was removed, the chain root before and after, the author, a seal. A purge without an author is refused |
+| `src/sas/api/acces.py` | **implemented** — the access log (who read which attestation, under which role, from which tenant), served by `GET /journal-acces` |
+| `src/sas/manifeste/observation.py` | **implemented, measured** — the manifest draft read off a journal observation. It refuses to sign, to declare the unobserved, or to guess the purpose |
+| `src/sas/analyseur/canaux.py` | **implemented, measured** — three covert-channel indicators (resource name, timing, alternating timing); the six uncovered channels are declared in `docs/CANAUX-CACHES.md` |
+| `src/sas/surveillance.py` | **implemented, measured** — the replay from a finding (EF-44), the comparison to the reference, and the alerts: new attempt, vanished behaviour, budget exceeded, undeclared change (EF-30 to EF-34) |
+| `src/sas/intervalle.py` | **implemented, measured** — the Wilson interval, the N for 95 %, and the published bound (EF-24) |
+| `src/sas/federation.py` | **implemented, measured** — what leaves a tenant: the *form* of the behaviour, never a client name; `aucun_nom_client_ne_sort` is an executable property |
+| `src/sas/kpi.py` | **implemented, measured** — the eight KPIs computed from the counters; a KPI that cannot be measured is rendered as not measured, with the reason |
+| `src/sas/mcp/` | **implemented, measured** — the gateway exposed as an MCP server (JSON-RPC on stdio, standard library only); the tool list comes from the manifest (EF-05) and every call crosses the real gateway |
 | `src/sas/analyseur/` | **implemented, measured** — pass 1 deterministic aggregation, pass 3 classification decided by code from configurable thresholds; pass 2 (the model's proposal) is an injected port |
 | `src/sas/modeles/*` (Bedrock adapters) | **not implemented** — pass 2 is a port only; classification currently runs with `proposition=None`, which is the conservative direction (no model opinion, code decides) |
 | `src/sas/compositions/` + `regles/compositions.yaml` | **implemented, measured** — the three motives of §16.2 as data, chains of two and three calls, session and cross-replay scope |
@@ -397,8 +409,8 @@ the data model exist but the AWS-backed implementation does not run here.
 | `portal/` | **implemented, measured** — static page, no build step, no CDN, no external resource; guarded by tests |
 | `src/sas/cli*.py` | **implemented, measured** — `sas smoke` (what CI runs), `sas demo` (three guests, three verdicts), `sas portail` |
 | `src/sas/rapports/` | **implemented, measured** — report FR/EN in ten sections, one-page attestation FR/EN, vendor gap report FR/EN with no client content |
-| `src/sas/registre.py` | **not implemented as a module** — the registry is served by the store plus `GET /registre`; a dedicated module is lot 14's remaining work |
-| `eval/` (20 faulty + 20 benign + 100 labelled) | **in flight** (lot 18) — the harness and the generator are specified in `docs/RECETTE.md` |
+| `src/sas/registre.py` | **implemented, measured** — the registry of every third-party agent (EF-43): deadlines sorted by urgency, editor trust score over time, cross-agent comparison, served by `GET /registre` |
+| `eval/` (20 faulty + 20 benign + 100 labelled) | **implemented, measured** — the ten measures of §27 computed on the real pipeline, the 41 guests generated by `eval/genere-agents.mjs` (annexe F.3) and the committed table checked against the generator |
 | `infra/cdk/` | **written, not synthesised in CI** — CDK stacks generated from `sas.store.ddl`; `aws-cdk-lib` is deliberately absent from the runners, so the tests verify the DDL sync and the route inventory instead |
 | `infra/quick/` + `src/sas/quicksight/` | **implemented, measured** — datasets, row-level security per tenant, deterministic bundle checked by a test |
 | Amazon Bedrock Guardrails | **designed** — used to protect the analyser against indirect injection and as the contextual-grounding pre-filter of §16.3; requires the real backend |
