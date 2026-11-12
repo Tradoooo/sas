@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="960" viewBox="0 0 1200 960" font-family="Arial, Helvetica, sans-serif" role="img" aria-label="Existing approaches to third-party agent assurance, what each gives, what each misses, and where Sas fits">
+  <title>What exists today, and where Sas fits (specification section 4)</title>
+  <desc>Seven existing approaches — vendor questionnaire, SOC 2 report, hand-made IAM perimeter, CloudTrail logs, classic code sandbox, IAM Access Analyzer, Bedrock Compliance-as-Code — with what each one gives and what each one misses, then what Sas adds, what Sas does not replace, and the boundary with the two other security products of the portfolio.</desc>
+
+  <rect x="0" y="0" width="1200" height="960" fill="#ffffff"/>
+
+  <!-- ===================== title ===================== -->
+  <text x="30" y="34" font-size="19" font-weight="bold" fill="#111111">What exists today — and where Sas fits</text>
+  <text x="30" y="56" font-size="12.5" fill="#444444">Specification section 4 — seven existing approaches, what each one gives, what each one misses</text>
+
+  <!-- ===================== table header ===================== -->
+  <rect x="20" y="72" width="1160" height="30" fill="#e9eef5" stroke="#9aa9bd"/>
+  <text x="32" y="92" font-size="13" font-weight="bold" fill="#1b2a41">Approach</text>
+  <text x="300" y="92" font-size="13" font-weight="bold" fill="#1b2a41">What it gives</text>
+  <text x="700" y="92" font-size="13" font-weight="bold" fill="#1b2a41">What is missing</text>
+
+  <!-- ===================== row 1 ===================== -->
+  <rect x="20" y="104" width="1160" height="62" fill="#ffffff" stroke="#c8d2df"/>
+  <text x="32" y="128" font-size="13" font-weight="bold" fill="#111111">Vendor security questionnaire</text>
+  <text x="300" y="128" font-size="12" fill="#222222">A declarative snapshot, dated.</text>
+  <text x="700" y="128" font-size="12" fill="#222222">No measurement, no verification, no drift detection.</text>
+
+  <!-- ===================== row 2 ===================== -->
+  <rect x="20" y="168" width="1160" height="62" fill="#f6f8fb" stroke="#c8d2df"/>
+  <text x="32" y="192" font-size="13" font-weight="bold" fill="#111111">SOC 2 / ISO 27001 report (vendor)</text>
+  <text x="300" y="192" font-size="12" fill="#222222">A guarantee on the vendor's own infrastructure.</text>
+  <text x="700" y="192" font-size="12" fill="#222222">Nothing about the agent's behaviour inside your own account.</text>
+
+  <!-- ===================== row 3 ===================== -->
+  <rect x="20" y="232" width="1160" height="62" fill="#ffffff" stroke="#c8d2df"/>
+  <text x="32" y="256" font-size="13" font-weight="bold" fill="#111111">Hand-made IAM perimeter</text>
+  <text x="300" y="256" font-size="12" fill="#222222">A real protection.</text>
+  <text x="700" y="256" font-size="12" fill="#222222">Binary: too wide or too narrow — and nobody knows which</text>
+  <text x="700" y="272" font-size="12" fill="#222222">without having observed the agent.</text>
+
+  <!-- ===================== row 4 ===================== -->
+  <rect x="20" y="296" width="1160" height="62" fill="#f6f8fb" stroke="#c8d2df"/>
+  <text x="32" y="320" font-size="13" font-weight="bold" fill="#111111">CloudTrail logs</text>
+  <text x="300" y="320" font-size="12" fill="#222222">The trace, after the fact.</text>
+  <text x="700" y="320" font-size="12" fill="#222222">After the incident, not before; no isolation, no classification.</text>
+
+  <!-- ===================== row 5 ===================== -->
+  <rect x="20" y="360" width="1160" height="62" fill="#ffffff" stroke="#c8d2df"/>
+  <text x="32" y="384" font-size="13" font-weight="bold" fill="#111111">Classic code sandbox (container, VM)</text>
+  <text x="300" y="384" font-size="12" fill="#222222">Execution isolation.</text>
+  <text x="700" y="384" font-size="12" fill="#222222">Built for deterministic code: captures neither the</text>
+  <text x="700" y="400" font-size="12" fill="#222222">reasoning, nor the tool calls, nor the variability.</text>
+
+  <!-- ===================== row 6 ===================== -->
+  <rect x="20" y="424" width="1160" height="62" fill="#f6f8fb" stroke="#c8d2df"/>
+  <text x="32" y="448" font-size="13" font-weight="bold" fill="#111111">IAM Access Analyzer</text>
+  <text x="300" y="448" font-size="12" fill="#222222">Natively finds granted-but-unused IAM permissions</text>
+  <text x="300" y="464" font-size="12" fill="#222222">(over 90 days of history).</text>
+  <text x="700" y="448" font-size="12" fill="#222222">Works at the IAM identity level, not at an invited agent's</text>
+  <text x="700" y="464" font-size="12" fill="#222222">session: no compositions, no gap against a signed manifest.</text>
+
+  <!-- ===================== row 7 ===================== -->
+  <rect x="20" y="488" width="1160" height="62" fill="#ffffff" stroke="#c8d2df"/>
+  <text x="32" y="512" font-size="13" font-weight="bold" fill="#111111">Bedrock Compliance-as-Code</text>
+  <text x="300" y="512" font-size="12" fill="#222222">Compliance artefacts generated from the infrastructure.</text>
+  <text x="700" y="512" font-size="12" fill="#222222">Covers the compliance of declared infrastructure, not the</text>
+  <text x="700" y="528" font-size="12" fill="#222222">observed behaviour of a probabilistic actor.</text>
+
+  <!-- ===================== Sas band ===================== -->
+  <rect x="20" y="568" width="1160" height="216" rx="6" fill="#eaf3ec" stroke="#3f7a4a" stroke-width="2"/>
+  <text x="34" y="592" font-size="15" font-weight="bold" fill="#123d1c">What Sas adds</text>
+  <text x="660" y="592" font-size="15" font-weight="bold" fill="#123d1c">What Sas does not replace</text>
+
+  <text x="34" y="616" font-size="12" fill="#1d1d1d">- The invited agent is hosted and measured; it never enters</text>
+  <text x="34" y="632" font-size="12" fill="#1d1d1d">the customer's account.</text>
+  <text x="34" y="654" font-size="12" fill="#1d1d1d">- The perimeter is derived from the signed manifest and</text>
+  <text x="34" y="670" font-size="12" fill="#1d1d1d">applied by Policy before the tool runs.</text>
+  <text x="34" y="692" font-size="12" fill="#1d1d1d">- 100 % of the calls are journalled, denials included,</text>
+  <text x="34" y="708" font-size="12" fill="#1d1d1d">each entry chained to the previous one.</text>
+  <text x="34" y="730" font-size="12" fill="#1d1d1d">- The declared/observed gap is published in both directions.</text>
+  <text x="34" y="752" font-size="12" fill="#1d1d1d">- The attestation publishes its own statistical scope.</text>
+  <text x="34" y="774" font-size="12" fill="#1d1d1d">- The sponsor alone decides to go live; Sas never authorises.</text>
+
+  <text x="660" y="616" font-size="12" fill="#1d1d1d">- The vendor's SOC 2 / ISO 27001 report, its scope and its</text>
+  <text x="660" y="632" font-size="12" fill="#1d1d1d">auditor.</text>
+  <text x="660" y="654" font-size="12" fill="#1d1d1d">- The customer's code review, change management and MFA.</text>
+  <text x="660" y="676" font-size="12" fill="#1d1d1d">- The customer's own IAM design and access reviews.</text>
+  <text x="660" y="698" font-size="12" fill="#1d1d1d">- CloudTrail and the account's own audit trail.</text>
+  <text x="660" y="720" font-size="12" fill="#1d1d1d">- The classic sandbox, for classic code.</text>
+  <text x="660" y="742" font-size="12" fill="#1d1d1d">- IAM Access Analyzer and its 90-day window.</text>
+  <text x="660" y="764" font-size="12" fill="#1d1d1d">- The two other products of this portfolio (below).</text>
+
+  <!-- ===================== portfolio boundary ===================== -->
+  <text x="30" y="812" font-size="14" font-weight="bold" fill="#111111">The frontier of the portfolio — three products, three catalogues, three reports, three price slots</text>
+
+  <rect x="30" y="826" width="360" height="72" rx="5" fill="#f1f1f4" stroke="#8b8b96"/>
+  <text x="46" y="850" font-size="13" font-weight="bold" fill="#2b2b33">rempart</text>
+  <text x="46" y="870" font-size="12" fill="#2b2b33">Attacks the application: continuous penetration</text>
+  <text x="46" y="886" font-size="12" fill="#2b2b33">testing of code and infrastructure.</text>
+
+  <rect x="410" y="826" width="360" height="72" rx="5" fill="#f1f1f4" stroke="#8b8b96"/>
+  <text x="426" y="850" font-size="13" font-weight="bold" fill="#2b2b33">piege</text>
+  <text x="426" y="870" font-size="12" fill="#2b2b33">Attacks the assistant: AI security tests, from</text>
+  <text x="426" y="886" font-size="12" fill="#2b2b33">the outside.</text>
+
+  <rect x="790" y="826" width="380" height="72" rx="5" fill="#eaf3ec" stroke="#3f7a4a" stroke-width="2"/>
+  <text x="806" y="850" font-size="13" font-weight="bold" fill="#123d1c">Sas</text>
+  <text x="806" y="870" font-size="12" fill="#123d1c">Hosts the invited agent and measures it, in an</text>
+  <text x="806" y="886" font-size="12" fill="#123d1c">airlock, then publishes the scope of the result.</text>
+
+  <text x="30" y="924" font-size="11.5" fill="#555555">The AWS prebuilt agents (Kiro, Security, DevOps, FinOps) are, from Sas's point of view, third-party agents to homologate: candidates, not substitutes.</text>
+  <text x="30" y="942" font-size="11.5" fill="#555555">Every figure quoted above is measured by this repository; sources: portal/data/demo.json, docs/ECHECS.md, src/sas/ecarts.py, src/sas/agentcore/politique_manifeste.py.</text>
+</svg>
