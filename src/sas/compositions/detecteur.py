@@ -78,8 +78,16 @@ def charger_regles(chemin: str | Path | None = None) -> tuple[tuple[RegleComposi
     return regles, motifs
 
 
-def etiqueter(entree: Any, motifs: Motifs) -> frozenset[str]:
-    """The labels one journal entry carries."""
+def etiqueter(entree: Any, motifs: Motifs, deja_vus: set[str] | None = None) -> frozenset[str]:
+    """The labels one journal entry carries.
+
+    `deja_vus` is the set of labels already met **in the same session**. It is
+    what makes the elevation motive detectable at all: the second step of that
+    chain — "a call made with credentials read earlier" — is not a property of one
+    entry, it is a property of the entry *and* what preceded it. Without session
+    context the `comp-elevation` rule could never match, and the detector would
+    silently never report a credential escalation.
+    """
     labels: set[str] = set()
     if getattr(entree, "sortie_reseau", False):
         labels.add("sortie_reseau")
@@ -94,6 +102,8 @@ def etiqueter(entree: Any, motifs: Motifs) -> frozenset[str]:
                 labels.add("ecriture_configuration")
             else:
                 labels.add("lecture_configuration")
+    if deja_vus and "lecture_identifiants" in deja_vus and "lecture_identifiants" not in labels:
+        labels.add("appel_avec_identifiants")
     return frozenset(labels)
 
 
@@ -135,7 +145,12 @@ def _chercher_session(
     destinations_declarees: Sequence[str],
     graine: int,
 ) -> Composition | None:
-    etiquettes = [etiqueter(entree, motifs) for entree in journal]
+    etiquettes: list[frozenset[str]] = []
+    deja_vus: set[str] = set()
+    for entree in journal:
+        labels = etiqueter(entree, motifs, deja_vus)
+        deja_vus |= labels
+        etiquettes.append(labels)
     for debut in range(len(journal)):
         for fin in range(debut + 1, min(debut + regle.longueur_max, len(journal) - 1) + 1):
             fenetre = etiquettes[debut : fin + 1]
@@ -154,9 +169,14 @@ def _chercher_rejeux(
     motifs: Motifs,
     graine: int,
 ) -> list[Composition]:
-    """The persistence motive: a configuration write, read back next time."""
+    """The persistence motive: a configuration write, read back next time.
+
+    Sessions are ordered by **replay number**, not by identifier: identifiers are
+    hashes, so sorting on them would pair two unrelated replays and the "next
+    session" of §16.2 would mean nothing.
+    """
     trouvees: list[Composition] = []
-    sessions = sorted(par_session)
+    sessions = _ordonner_rejeux(par_session)
     for regle in regles:
         if regle.portee != "rejeux":
             continue
@@ -167,6 +187,19 @@ def _chercher_rejeux(
                 continue
             trouvees.append(_composer(campagne_id, regle, [ecriture, relecture], graine))
     return trouvees
+
+
+def _ordonner_rejeux(par_session: Mapping[str, list[Any]]) -> list[str]:
+    """Session ids in replay order, grouped by scenario."""
+
+    def cle(item: tuple[str, list[Any]]) -> tuple[str, int, str]:
+        session_id, entrees = item
+        premiere = entrees[0] if entrees else None
+        scenario = str(getattr(premiere, "scenario_id", "")) if premiere else ""
+        rejeu = int(getattr(premiere, "numero_rejeu", 0)) if premiere else 0
+        return (scenario, rejeu, session_id)
+
+    return [session_id for session_id, _ in sorted(par_session.items(), key=cle)]
 
 
 def _premiere(journal: Sequence[Any], motifs: Motifs, etiquette: str) -> Any | None:
@@ -208,15 +241,21 @@ def _composer(campagne_id: str, regle: RegleComposition, fenetre: Sequence[Any],
 
 def ressources_dans_composition(
     compositions: Sequence[Composition], entrees: Sequence[Any]
-) -> dict[str, bool]:
-    """resource -> takes part in a detected composition (feeds the classifier)."""
-    sessions = {c.session_id for c in compositions}
-    composees: dict[str, bool] = {}
+) -> dict[str, str]:
+    """resource -> the motive of the chain it takes part in (feeds the classifier).
+
+    The motive is carried, not just a flag: §16.2 makes exfiltration and elevation
+    Hostile but persistence only Tentative, so a boolean would flatten the rule and
+    refuse agents the specification says to investigate.
+    """
+    motifs = {c.session_id: c.motif.value for c in compositions}
+    composees: dict[str, str] = {}
     for entree in entrees:
-        if entree.session_id not in sessions:
+        motif = motifs.get(entree.session_id)
+        if motif is None:
             continue
         for ressource in entree.ressources:
-            composees[ressource] = True
+            composees[ressource] = motif
         if entree.destination:
-            composees[entree.destination] = True
+            composees[entree.destination] = motif
     return composees
