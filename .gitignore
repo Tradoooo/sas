@@ -44,3 +44,6 @@ secrets.*
 # Sas local state
 .var/
 data/generated/
+
+# arbre jetable du harnais de mutation
+.mutants/

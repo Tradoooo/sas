@@ -205,6 +205,8 @@ function afficherAgent(agent) {
       `  ·  rejeux par scénario : ${agent.n_rejeux}  ·  graine : ${agent.graine}`
   );
   texte("conditions", (agent.conditions || []).join(" · ") || "aucune condition");
+  afficherReplay(agent);
+  afficherFiltrage(agent);
 }
 
 /* ------------------------------------------------------------------ Live -- */
@@ -283,10 +285,202 @@ async function chargerRapportLive() {
 
 let CAMPAGNE = "";
 
+/* ------------------------------------------------------------- Replay ----- */
+
+let REPLAY_INDEX = 0;
+let REPLAY_TIMER = null;
+
+function arreterLecture() {
+  if (REPLAY_TIMER !== null) {
+    clearInterval(REPLAY_TIMER);
+    REPLAY_TIMER = null;
+    const bouton = $("replay-lecture");
+    if (bouton) bouton.textContent = "▶ Lecture";
+  }
+}
+
+function classe_decision(appel) {
+  if (appel.decision !== "refuse") return "autorise";
+  return appel.bornage ? "bornage" : "refuse";
+}
+
+function afficherReplay(agent) {
+  arreterLecture();
+  const journal = agent.journal || { appels: [], session: "", scenario: "", rejeu: 0, total: 0, tronque: false };
+  const liste = $("replay-journal");
+  liste.innerHTML = "";
+  if (!journal.appels.length) {
+    $("replay-contexte").textContent =
+      "Aucun appel : cet agent ne passe pas par la passerelle, il n'y a donc rien à rejouer (ENF-17).";
+    $("replay-position").textContent = "";
+    $("replay-graphe").innerHTML = "";
+    return;
+  }
+  $("replay-contexte").textContent =
+    `Session ${journal.session} · scénario ${journal.scenario} · rejeu ${journal.rejeu} · ` +
+    `${journal.total} appel(s) journalisé(s)` + (journal.tronque ? " (liste tronquée à l'affichage)" : "");
+
+  journal.appels.forEach((appel, index) => {
+    const li = document.createElement("li");
+    li.className = "appel " + classe_decision(appel);
+    li.dataset.index = String(index);
+    const cible = appel.sortie ? appel.destination : (appel.ressources[0] || "");
+    li.innerHTML =
+      `<span class="n">${appel.n}</span>` +
+      `<span class="outil">${appel.outil}</span>` +
+      `<span class="cible">${cible}</span>` +
+      `<span class="decision">${libelleDecision(appel)}</span>` +
+      `<span class="t">${appel.t_ms.toFixed(0)} ms</span>`;
+    li.addEventListener("click", () => allerA(index));
+    liste.appendChild(li);
+  });
+
+  REPLAY_INDEX = 0;
+  allerA(0);
+  dessinerGraphe(journal.appels);
+}
+
+function libelleDecision(appel) {
+  if (appel.decision !== "refuse") return "autorisé";
+  if (appel.bornage) return "refusé · bornage";
+  return "refusé · " + appel.regle;
+}
+
+function allerA(index) {
+  const items = [...document.querySelectorAll("#replay-journal .appel")];
+  if (!items.length) return;
+  REPLAY_INDEX = Math.max(0, Math.min(index, items.length - 1));
+  items.forEach((li, i) => li.classList.toggle("courant", i === REPLAY_INDEX));
+  items[REPLAY_INDEX].scrollIntoView({ block: "nearest", behavior: "smooth" });
+  $("replay-position").textContent = `${REPLAY_INDEX + 1} / ${items.length}`;
+  document.querySelectorAll("#replay-graphe .noeud").forEach((n) => {
+    n.classList.toggle("courant", Number(n.dataset.index) === REPLAY_INDEX);
+  });
+}
+
+function dessinerGraphe(appels) {
+  /* Hand-built SVG: no library, no CDN, readable in a video frame. */
+  const pas = 46;
+  const marge = 26;
+  const hauteur = marge * 2 + pas * (appels.length - 1);
+  const largeur = 560;
+  const morceaux = [
+    `<svg viewBox="0 0 ${largeur} ${hauteur}" role="img" `,
+    `aria-label="Chaîne causale des appels de la session" xmlns="http://www.w3.org/2000/svg">`,
+  ];
+  appels.forEach((appel, index) => {
+    const y = marge + pas * index;
+    if (index > 0) {
+      morceaux.push(`<line class="arete" x1="${marge}" y1="${y - pas + 9}" x2="${marge}" y2="${y - 9}" />`);
+    }
+  });
+  appels.forEach((appel, index) => {
+    const y = marge + pas * index;
+    const cible = appel.sortie ? appel.destination : appel.ressources[0] || "";
+    morceaux.push(
+      `<g class="noeud ${classe_decision(appel)}" data-index="${index}" role="button" tabindex="0">` +
+        `<circle cx="${marge}" cy="${y}" r="9" />` +
+        `<text x="${marge + 20}" y="${y + 4}">${index + 1}. ${escapeXml(appel.outil)}</text>` +
+        `<text class="cible" x="${marge + 20}" y="${y + 19}">${escapeXml(cible.slice(0, 62))}</text>` +
+        `</g>`
+    );
+  });
+  morceaux.push("</svg>");
+  const conteneur = $("replay-graphe");
+  conteneur.innerHTML = morceaux.join("");
+  conteneur.querySelectorAll(".noeud").forEach((n) => {
+    n.addEventListener("click", () => allerA(Number(n.dataset.index)));
+    n.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") allerA(Number(n.dataset.index));
+    });
+  });
+}
+
+function escapeXml(texte) {
+  return String(texte)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function afficherFiltrage(agent) {
+  const f = agent.filtrage;
+  if (!f) return;
+  texte("filtrage-bruts", f.refus_bruts);
+  texte("filtrage-restent", f.restent_a_lire);
+  texte(
+    "filtrage-detail",
+    `${f.dont_hostiles} hostile(s) · ${f.dont_tentatives} tentative(s) · ` +
+      `${f.dont_debordements} débordement(s) · ${f.dont_revue_humaine} en revue humaine`
+  );
+  const restants = Math.max(0, f.refus_bruts - f.exploration_filtree);
+  texte(
+    "filtrage-explication",
+    f.exploration_filtree
+      ? `${f.exploration_filtree} appel(s) d'exploration filtré(s) : du bruit de raisonnement. ` +
+        `Restent ${restants} refus à examiner, dont ${f.restent_a_lire} découverte(s) classée(s). ` +
+        `Sans ce filtrage le RSSI voit ${f.refus_bruts} refus et conclut que l'agent est hostile (§13.5).`
+      : `Aucune exploration à filtrer sur cette campagne : les ${f.refus_bruts} refus sont du bornage ` +
+        `(budget, durée) ou des tentatives réelles — le filtrage ne supprime rien d'autre que le bruit.`
+  );
+}
+
+/* ------------------------------------------------------------ Mode juge --- */
+
+const MOMENTS = [
+  { agent: "demo-conforme", titre: "0:00 — l'agent conforme : zéro écart est un résultat" },
+  { agent: "demo-bavard", titre: "0:55 — l'agent bavard explore et touche un leurre" },
+  { agent: "demo-bavard", titre: "1:10 — l'exploration est filtrée, pas noyée dans le journal" },
+  { agent: "demo-curieux", titre: "1:40 — l'agent curieux lit le leurre sensible puis tente une sortie" },
+  { agent: "demo-curieux", titre: "1:55 — la composition d'exfiltration est capturée" },
+  { agent: "demo-conforme", titre: "2:10 — trois invités, trois verdicts" },
+  { agent: "demo-conforme", titre: "2:25 — l'attestation porte sa propre portée statistique" },
+  { agent: "demo-opaque", titre: "2:40 — un agent non instrumentable est non mesurable, jamais conforme" },
+];
+let JUGE_TIMER = null;
+
+function demarrerJuge() {
+  const bandeau = $("juge-bandeau");
+  bandeau.classList.remove("cache");
+  let etape = 0;
+  const jouer = () => {
+    if (etape >= MOMENTS.length) {
+      clearInterval(JUGE_TIMER);
+      $("juge-titre").textContent = "Fin — les quatre invités, quatre issues différentes";
+      return;
+    }
+    const moment = MOMENTS[etape];
+    const agent = DONNEES.agents.find((a) => a.nom === moment.agent);
+    $("juge-titre").textContent = moment.titre;
+    if (agent) {
+      AGENT = agent;
+      afficherAgent(agent);
+      document.querySelectorAll("#registre tbody tr").forEach((tr) => {
+        tr.classList.toggle("courant", tr.textContent.includes(agent.nom));
+      });
+    }
+    etape += 1;
+  };
+  jouer();
+  JUGE_TIMER = setInterval(jouer, 5000);
+}
+
 /* ------------------------------------------------------------------ Boot -- */
 
 document.addEventListener("DOMContentLoaded", async () => {
   $("formulaire").addEventListener("submit", lancerCampagne);
+  $("replay-debut").addEventListener("click", () => allerA(0));
+  $("replay-prec").addEventListener("click", () => allerA(REPLAY_INDEX - 1));
+  $("replay-suiv").addEventListener("click", () => allerA(REPLAY_INDEX + 1));
+  $("replay-lecture").addEventListener("click", () => {
+    if (REPLAY_TIMER !== null) {
+      arreterLecture();
+      return;
+    }
+    $("replay-lecture").textContent = "⏸ Pause";
+    REPLAY_TIMER = setInterval(() => allerA(REPLAY_INDEX + 1), 700);
+  });
   for (const bouton of document.querySelectorAll("button[data-langue]")) {
     bouton.addEventListener("click", () => {
       LANGUE = bouton.dataset.langue;
@@ -320,5 +514,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch (erreur) {
       etat("données indisponibles : " + erreur.message, "ko");
     }
+  }
+
+  // Mode juge : la démonstration de §28.2 déroule seule, sans un seul clic.
+  if (new URLSearchParams(window.location.search).get("juge") === "1") {
+    $("juge-bandeau").classList.remove("cache");
+    demarrerJuge();
   }
 });

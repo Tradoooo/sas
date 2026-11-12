@@ -159,7 +159,53 @@ async function testerPublic(navigateur) {
     const r = await fetch("data/demo.json");
     return r.json();
   });
-  const attendu = donnees.agents.map((a) => a.resume.verdict).sort().join(",");
+
+  // --- le replay du journal -------------------------------------------------
+  await page.evaluate(() => {
+    const ligne = [...document.querySelectorAll("#registre tbody tr")].find((tr) => tr.textContent.includes("demo-curieux"));
+    if (ligne) ligne.click();
+  });
+  await page.waitForTimeout(400);
+  const appels = await page.$$("#replay-journal .appel");
+  verifier(cible, "replay : la session est rejouable appel par appel", appels.length > 0, `${appels.length} ligne(s)`);
+  const refus = await page.$$("#replay-journal .appel.refuse");
+  verifier(cible, "replay : les refus sont distingués des autorisations", refus.length > 0, `${refus.length} refus`);
+  const courante = await page.$("#replay-journal .appel.courant");
+  verifier(cible, "replay : une ligne est sélectionnée", !!courante);
+  await page.click("#replay-suiv");
+  await page.waitForTimeout(250);
+  const position = (await page.textContent("#replay-position")) || "";
+  verifier(cible, "replay : la position avance", /2 \/ /.test(position), position);
+
+  // --- le graphe de la chaîne causale --------------------------------------
+  const graphe = await page.$("#replay-graphe svg");
+  verifier(cible, "graphe de la chaîne causale en SVG", !!graphe);
+  const noeuds = await page.$$("#replay-graphe .noeud");
+  verifier(cible, "graphe : un nœud par appel", noeuds.length > 0, `${noeuds.length} nœud(s)`);
+  // Ce qui compte n'est pas la présence d'une URL — le graphe affiche des
+  // destinations, ce sont des DONNÉES — mais le fait qu'il ne CHARGE rien :
+  // pas de src/href distant, pas de script, pas d'import CSS.
+  const htmlGraphe = await page.innerHTML("#replay-graphe");
+  const chargeQuoiQueSoit = /(?:src|href)\s*=\s*["']https?:|<script|@import/i.test(htmlGraphe);
+  verifier(cible, "graphe : rien n'est chargé de l'extérieur", !chargeQuoiQueSoit);
+
+  // --- avant / après filtrage ----------------------------------------------
+  const bruts = (await page.textContent("#filtrage-bruts")) || "";
+  const restants = (await page.textContent("#filtrage-restent")) || "";
+  verifier(cible, "avant/après : les deux volumes sont affichés", bruts.trim() !== "" && restants.trim() !== "", `${bruts} → ${restants}`);
+  const explication = (await page.textContent("#filtrage-explication")) || "";
+  verifier(cible, "avant/après : l'explication du filtrage est présente", explication.length > 40);
+
+  // --- le mode juge --------------------------------------------------------
+  const pageJuge = await page.context().newPage();
+  await pageJuge.goto(PUBLIC + "?juge=1", { waitUntil: "networkidle" });
+  await pageJuge.waitForTimeout(1200);
+  const bandeauJuge = await pageJuge.$("#juge-bandeau:not(.cache)");
+  verifier(cible, "mode juge : le bandeau s'affiche", !!bandeauJuge);
+  const titre = (await pageJuge.textContent("#juge-titre")) || "";
+  verifier(cible, "mode juge : la démo déroule sans clic", titre.length > 10, titre.slice(0, 60));
+  await pageJuge.close();
+
   const lu = await page.evaluate(() =>
     [...document.querySelectorAll("#registre tbody tr")].map((tr) => tr.children[2].textContent.trim()).sort().join(",")
   );

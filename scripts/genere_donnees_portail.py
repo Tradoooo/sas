@@ -34,7 +34,7 @@ from sas.homologation import Dossier, resume  # noqa: E402
 from sas.rapports import attestation as module_attestation  # noqa: E402
 from sas.rapports import editeur as module_editeur  # noqa: E402
 from sas.statistiques import phrase_portee  # noqa: E402
-from sas.types import Langue  # noqa: E402
+from sas.types import Langue, Nature  # noqa: E402
 
 GRANGE_DEFAUT = 11
 SORTIE_DEFAUT = RACINE / "portal" / "data" / "demo.json"
@@ -72,6 +72,8 @@ def un_agent(nom: str, *, rejeux: int, graine: int) -> dict[str, Any]:
         "rapport_en": dossier.rapport_en,
         "rapport_editeur": dossier.rapport_editeur,
         "cout": _cout(dossier),
+        "journal": _journal_replay(dossier),
+        "filtrage": _filtrage(dossier),
     }
 
 
@@ -105,6 +107,90 @@ def _tentatives(dossier: Dossier) -> list[dict[str, Any]]:
         }
         for t in dossier.tentatives[:40]
     ]
+
+
+def _journal_replay(dossier: Dossier, limite: int = 40) -> dict[str, Any]:
+    """One session's calls, in order, for the step-through replay.
+
+    The session chosen is the most instructive one: the session that carries a
+    detected composition if there is one, else the one with the most denials,
+    else the first. Bounding denials (budget, duration, suspension) are tagged
+    apart from perimeter denials, because the page must not paint a session the
+    airlock stopped in the same colour as an agent overreaching.
+    """
+    from sas.agentcore.politique_manifeste import REGLES_BORNAGE
+
+    sessions = {s.id: s for s in dossier.campagne.sessions}
+    cible = _session_instructive(dossier)
+    entrees = [e for e in dossier.campagne.entrees if e.session_id == cible]
+    entrees.sort(key=lambda e: (e.horodatage, e.id))
+    debut = entrees[0].horodatage if entrees else None
+    appels = []
+    for index, entree in enumerate(entrees[:limite]):
+        appels.append(
+            {
+                "n": index + 1,
+                "outil": entree.outil,
+                "ressources": list(entree.ressources),
+                "decision": entree.decision.value,
+                "regle": entree.regle_appliquee,
+                "bornage": entree.regle_appliquee in REGLES_BORNAGE,
+                "sortie": entree.sortie_reseau,
+                "destination": entree.destination,
+                "t_ms": round((entree.horodatage - debut).total_seconds() * 1000, 1) if debut else 0.0,
+                "jetons": entree.jetons,
+                "sensible": bool((entree.resultat or {}).get("sensible"))
+                if isinstance(entree.resultat, dict)
+                else False,
+                "empreinte": entree.empreinte[:19] + "…",
+            }
+        )
+    session = sessions.get(cible)
+    return {
+        "session": cible,
+        "scenario": session.scenario_id if session else "",
+        "rejeu": session.numero_rejeu if session else 0,
+        "appels": appels,
+        "tronque": len(entrees) > limite,
+        "total": len(entrees),
+    }
+
+
+def _session_instructive(dossier: Dossier) -> str:
+    """The session that best shows what happened: composition first, then denials."""
+    if dossier.compositions:
+        return dossier.compositions[0].session_id
+    par_session: dict[str, int] = {}
+    for entree in dossier.campagne.entrees:
+        if entree.decision.value == "refuse":
+            par_session[entree.session_id] = par_session.get(entree.session_id, 0) + 1
+    if par_session:
+        return max(sorted(par_session), key=lambda s: par_session[s])
+    if dossier.campagne.sessions:
+        return dossier.campagne.sessions[0].id
+    return ""
+
+
+def _filtrage(dossier: Dossier) -> dict[str, Any]:
+    """§13.5 — the before/after of exploration filtering, as counted.
+
+    This is the panel that separates a product from a raw log: the reader sees
+    the volume that arrives, what is noise, and what is left for a human.
+    """
+    from sas.analyseur.classification import filtrer_exploration
+
+    total = dossier.agregat.refus
+    exploration = dossier.decision.decouvertes.get(Nature.EXPLORATION, 0)
+    visibles = filtrer_exploration(dossier.tentatives)
+    return {
+        "refus_bruts": total,
+        "exploration_filtree": exploration,
+        "restent_a_lire": len(visibles),
+        "dont_hostiles": dossier.decision.decouvertes.get(Nature.HOSTILE, 0),
+        "dont_tentatives": dossier.decision.decouvertes.get(Nature.TENTATIVE, 0),
+        "dont_debordements": dossier.decision.decouvertes.get(Nature.DEBORDEMENT, 0),
+        "dont_revue_humaine": dossier.decision.decouvertes.get(Nature.INDETERMINEE, 0),
+    }
 
 
 def _cout(dossier: Dossier) -> dict[str, Any]:
