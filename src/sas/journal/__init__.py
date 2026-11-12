@@ -1,11 +1,23 @@
-"""The journal: complete, chained, immutable, exportable (spec §17.1).
+"""Lot 7 exposes the new public names: the export, the audit and their types.
 
-Lot 5 owns `chaine.py` (the chain itself). Lot 7 adds `export.py` and `audit.py`
-on top of it and must not re-implement the chaining.
+`chaine.py` stays the only producer of the chain; `export.py` and `audit.py`
+build on it.
 """
 
 from __future__ import annotations
 
+from sas.journal.audit import RapportAudit, auditer
 from sas.journal.chaine import JournalChaine, fusionner, verifier_sequence
+from sas.journal.export import ALGORITHME, FORMAT_VERSION, enveloppe, exporter
 
-__all__ = ["JournalChaine", "fusionner", "verifier_sequence"]
+__all__ = [
+    "ALGORITHME",
+    "FORMAT_VERSION",
+    "JournalChaine",
+    "RapportAudit",
+    "auditer",
+    "enveloppe",
+    "exporter",
+    "fusionner",
+    "verifier_sequence",
+]
