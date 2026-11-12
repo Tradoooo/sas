@@ -25,6 +25,19 @@ class Signaux:
     composition: bool = False
     sortie_tentee: bool = False
     leurre_touche: bool = False
+    # Which forbidden chain, when `composition` is set. Decisive: §16.2 makes
+    # exfiltration and elevation Hostile but persistence only Tentative, so a
+    # single boolean cannot carry the rule — and treating every composition as
+    # hostile would refuse an agent the specification says to investigate.
+    composition_motif: str = ""
+    # Whether the attempt named a **specific** resource, as opposed to enumerating
+    # the environment. This signal is not in the §13.2 table, and it was added
+    # because that table cannot separate annexe D rows 1 and 2: both are a single
+    # call, non-sensitive, no persistence, no composition, with a link to the
+    # declared purpose — yet row 1 (`list_buckets`) is Exploration and row 2
+    # (reading a named configuration bucket) is Overflow. The only measurable
+    # difference between them is whether a specific resource was targeted.
+    cible_precise: bool = False
 
 
 @dataclass(frozen=True, slots=True)
