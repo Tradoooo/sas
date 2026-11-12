@@ -41,6 +41,18 @@ def construire_parseur() -> argparse.ArgumentParser:
     portail.add_argument("--port", type=int, default=8123)
     portail.add_argument("--hote", default="127.0.0.1")
 
+    attestation = sous.add_parser(
+        "attestation", help="print or export the attestation of a campaign (text, html or pdf)"
+    )
+    attestation.add_argument("--agent", default="demo-conforme")
+    attestation.add_argument("--scenarios", default="S1,S4")
+    attestation.add_argument("--rejeux", type=int, default=constantes.N_DEVELOPPEMENT)
+    attestation.add_argument("--graine", type=int, default=7)
+    attestation.add_argument("--langue", default="fr", choices=("fr", "en"))
+    attestation.add_argument("--format", dest="fmt", default="texte", choices=("texte", "html", "pdf"))
+    attestation.add_argument("--sortie", default="", help="output file (default: <numero>.pdf|.html)")
+    attestation.add_argument("--derniere", action="store_true", help="accepted for symmetry; no store yet")
+
     return parseur
 
 
@@ -55,6 +67,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         from sas.cli_portail import servir
 
         return servir(port=args.port, hote=args.hote)
+    if args.commande == "attestation":
+        from sas.cli_attestation import executer_attestation
+
+        return executer_attestation(
+            agent=args.agent,
+            scenarios=tuple(s.strip() for s in args.scenarios.split(",") if s.strip()),
+            rejeux=args.rejeux,
+            graine=args.graine,
+            langue=args.langue,
+            sortie=args.sortie,
+            fmt=args.fmt,
+        )
     return 2
 
 
