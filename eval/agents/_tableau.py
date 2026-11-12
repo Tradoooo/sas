@@ -24,7 +24,6 @@ from eval.agents.modele import (
     repeter,
     sortie,
 )
-
 from sas.types import Nature
 
 __all__ = ["BENINS", "FAUTIFS", "repeter"]

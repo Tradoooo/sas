@@ -96,31 +96,41 @@ def test_les_ressources_du_tableau_sont_celles_de_l_ombre() -> None:
 
 @pytest.mark.slow
 def test_le_tableau_commite_est_ce_que_le_generateur_produit() -> None:
-    """The reproducibility requirement itself."""
+    """The reproducibility requirement itself.
+
+    The regenerated copy is written **inside the repository**, not in /tmp: ruff
+    decides what is first-party from `pyproject.toml`, so formatting the same
+    file outside the tree produces a different import layout and the comparison
+    would fail on configuration rather than on content.
+    """
     if shutil.which("node") is None:
         pytest.skip("node absent du runner : la régénération est vérifiée en CI nocturne")
-    sortie = Path("/tmp/sas-tableau-regenere.py")
-    resultat = subprocess.run(
-        ["node", str(GENERATEUR), "--sortie", str(sortie)],
-        capture_output=True,
-        text=True,
-        check=False,
-        cwd=str(RACINE),
-    )
-    assert resultat.returncode == 0, resultat.stderr[-400:]
-    # Le fichier committé passe par `ruff format` comme le reste du dépôt : la
-    # comparaison se fait donc après mise en forme du fichier régénéré, sinon le
-    # contrôle échouerait sur de la seule typographie.
-    for commande in (
-        ["python3", "-m", "ruff", "format", str(sortie)],
-        ["python3", "-m", "ruff", "check", "--fix", "--select", "I,F401", str(sortie)],
-        ["python3", "-m", "ruff", "format", str(sortie)],
-    ):
-        subprocess.run(commande, capture_output=True, text=True, check=False)
-    assert sortie.read_text(encoding="utf-8") == TABLEAU.read_text(encoding="utf-8"), (
-        "eval/agents/_tableau.py est périmé : relancer `node eval/genere-agents.mjs` "
-        "puis `ruff check --fix --select I,F401` et `ruff format` dessus"
-    )
+    sortie = TABLEAU.with_name("_tableau_regenere.py")
+    try:
+        resultat = subprocess.run(
+            ["node", str(GENERATEUR), "--sortie", str(sortie)],
+            capture_output=True,
+            text=True,
+            check=False,
+            cwd=str(RACINE),
+        )
+        assert resultat.returncode == 0, resultat.stderr[-400:]
+        # Le fichier committé passe par ruff comme le reste du dépôt : la
+        # comparaison se fait après la même mise en forme, sinon le contrôle
+        # échouerait sur de la seule typographie — et un contrôle qui échoue
+        # pour rien apprend à tout le monde à l'ignorer.
+        for commande in (
+            ["python3", "-m", "ruff", "format", str(sortie)],
+            ["python3", "-m", "ruff", "check", "--fix", "--select", "I,F401", str(sortie)],
+            ["python3", "-m", "ruff", "format", str(sortie)],
+        ):
+            subprocess.run(commande, capture_output=True, text=True, check=False, cwd=str(RACINE))
+        assert sortie.read_text(encoding="utf-8") == TABLEAU.read_text(encoding="utf-8"), (
+            "eval/agents/_tableau.py est périmé : relancer `node eval/genere-agents.mjs` "
+            "puis `ruff format eval/agents/_tableau.py`"
+        )
+    finally:
+        sortie.unlink(missing_ok=True)
 
 
 def test_le_module_tableau_ne_contient_aucune_logique() -> None:

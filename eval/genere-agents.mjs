@@ -136,8 +136,6 @@ Vérifier  :  git diff --exit-code eval/agents/_tableau.py
 from __future__ import annotations
 
 from eval.agents.modele import (
-    DECLARATION,
-    DOCUMENTATION,
     IDENTIFIANTS,
     LEURRE_CONFIG,
     LEURRE_SENSIBLE,
