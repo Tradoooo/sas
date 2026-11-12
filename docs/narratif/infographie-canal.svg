@@ -1,0 +1,131 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" font-family="Arial, Helvetica, sans-serif" role="img" aria-label="How Sas works, from the invited agent to the attestation">
+  <title>How Sas works — from the invited agent to the attestation</title>
+  <desc>The invited third-party agent runs in the sandbox; the gateway is the single choke point; Policy applies the perimeter derived from the signed manifest before the tool runs; every call, allowed or denied, goes into the chained journal; the analyser computes the behaviour envelope, the declared-observed gap and the compositions; the report and the one-page attestation publish the result with its statistical scope; the sponsor alone decides to go live.</desc>
+
+  <defs>
+    <marker id="fleche" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3.2 L0,6.4 z" fill="#3a3a44"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="760" fill="#ffffff"/>
+
+  <!-- ===================== title ===================== -->
+  <text x="30" y="34" font-size="19" font-weight="bold" fill="#111111">How Sas works — from the invited agent to the attestation</text>
+  <text x="30" y="56" font-size="12.5" fill="#444444">The rules are applied by the gateway, not by the prompt. The model proposes, the code decides.</text>
+
+  <!-- ===================== the guest ===================== -->
+  <rect x="24" y="86" width="240" height="118" rx="6" fill="#f4f6fa" stroke="#5b6b86" stroke-width="1.5"/>
+  <text x="40" y="112" font-size="14" font-weight="bold" fill="#22304a">The invited agent</text>
+  <text x="40" y="134" font-size="12" fill="#222222">Third-party code, from a vendor or a</text>
+  <text x="40" y="150" font-size="12" fill="#222222">provider. It never enters the customer's</text>
+  <text x="40" y="166" font-size="12" fill="#222222">account; it runs here, in the airlock.</text>
+  <text x="40" y="188" font-size="12" fill="#555555">Ephemeral identity, one per session.</text>
+
+  <!-- ===================== the manifest ===================== -->
+  <rect x="24" y="228" width="240" height="104" rx="6" fill="#ffffff" stroke="#5b6b86" stroke-width="1.5"/>
+  <text x="40" y="254" font-size="14" font-weight="bold" fill="#22304a">The signed manifest</text>
+  <text x="40" y="276" font-size="12" fill="#222222">Tools, data, declared outputs (none),</text>
+  <text x="40" y="292" font-size="12" fill="#222222">budgets. Signed by the editor, validated</text>
+  <text x="40" y="308" font-size="12" fill="#222222">by the sponsor.</text>
+  <text x="40" y="326" font-size="12" fill="#555555">The single source of truth.</text>
+
+  <!-- ===================== arrow manifest -> policy ===================== -->
+  <path d="M264,280 L318,280" fill="none" stroke="#3a3a44" stroke-width="1.8" marker-end="url(#fleche)"/>
+  <text x="266" y="252" font-size="11.5" fill="#3a3a44">derives</text>
+
+  <!-- ===================== the policy ===================== -->
+  <rect x="322" y="228" width="230" height="104" rx="6" fill="#f4f6fa" stroke="#5b6b86" stroke-width="1.5"/>
+  <text x="338" y="254" font-size="14" font-weight="bold" fill="#22304a">Policy</text>
+  <text x="338" y="276" font-size="12" fill="#222222">The perimeter, generated from the</text>
+  <text x="338" y="292" font-size="12" fill="#222222">manifest and applied before the tool</text>
+  <text x="338" y="308" font-size="12" fill="#222222">runs. Never written by hand.</text>
+  <text x="338" y="326" font-size="12" fill="#555555">The agent never receives its limits.</text>
+
+  <!-- ===================== the gateway ===================== -->
+  <rect x="322" y="86" width="230" height="118" rx="6" fill="#eaf3ec" stroke="#3f7a4a" stroke-width="2"/>
+  <text x="338" y="112" font-size="14" font-weight="bold" fill="#123d1c">The gateway</text>
+  <text x="338" y="134" font-size="12" fill="#1d1d1d">The single choke point: every tool call</text>
+  <text x="338" y="150" font-size="12" fill="#1d1d1d">passes here. Nothing else can reach a</text>
+  <text x="338" y="166" font-size="12" fill="#1d1d1d">tool, so nothing can escape the log.</text>
+  <text x="338" y="188" font-size="12" fill="#555555">Allowed, denied, or under condition.</text>
+
+  <!-- ===================== arrow agent -> gateway ===================== -->
+  <path d="M264,145 L318,145" fill="none" stroke="#3a3a44" stroke-width="1.8" marker-end="url(#fleche)"/>
+  <text x="266" y="135" font-size="11.5" fill="#3a3a44">calls</text>
+
+  <!-- ===================== arrow gateway -> policy ===================== -->
+  <path d="M437,206 L437,224" fill="none" stroke="#3a3a44" stroke-width="1.8" marker-end="url(#fleche)"/>
+  <text x="445" y="220" font-size="11.5" fill="#3a3a44">is judged by</text>
+
+  <!-- ===================== the resources ===================== -->
+  <rect x="580" y="86" width="250" height="118" rx="6" fill="#ffffff" stroke="#5b6b86" stroke-width="1.5"/>
+  <text x="596" y="112" font-size="14" font-weight="bold" fill="#22304a">Shadow replica</text>
+  <text x="596" y="134" font-size="12" fill="#222222">Synthetic data and marked decoys,</text>
+  <text x="596" y="150" font-size="12" fill="#222222">built from the manifest, destroyed with</text>
+  <text x="596" y="166" font-size="12" fill="#222222">proof at the end of the campaign.</text>
+  <text x="596" y="188" font-size="12" fill="#555555">No real customer data is involved.</text>
+
+  <path d="M556,145 L576,145" fill="none" stroke="#3a3a44" stroke-width="1.8" marker-end="url(#fleche)"/>
+  <text x="556" y="112" font-size="11.5" fill="#3a3a44">reads</text>
+
+  <!-- ===================== the journal ===================== -->
+  <rect x="580" y="228" width="250" height="104" rx="6" fill="#eaf3ec" stroke="#3f7a4a" stroke-width="2"/>
+  <text x="596" y="254" font-size="14" font-weight="bold" fill="#123d1c">The chained journal</text>
+  <text x="596" y="276" font-size="12" fill="#1d1d1d">100 % of the calls, denials included,</text>
+  <text x="596" y="292" font-size="12" fill="#1d1d1d">each entry carrying the fingerprint of</text>
+  <text x="596" y="308" font-size="12" fill="#1d1d1d">the previous one. A deletion shows.</text>
+  <text x="596" y="326" font-size="12" fill="#555555">Complete, chained, immutable, exportable.</text>
+
+  <path d="M556,270 L576,270" fill="none" stroke="#3a3a44" stroke-width="1.8" marker-end="url(#fleche)"/>
+  <text x="534" y="260" font-size="11.5" fill="#3a3a44">is written</text>
+
+  <!-- ===================== the analyser ===================== -->
+  <rect x="580" y="370" width="250" height="118" rx="6" fill="#f4f6fa" stroke="#5b6b86" stroke-width="1.5"/>
+  <text x="596" y="396" font-size="14" font-weight="bold" fill="#22304a">The analyser</text>
+  <text x="596" y="418" font-size="12" fill="#222222">Behaviour envelope over N replays,</text>
+  <text x="596" y="434" font-size="12" fill="#222222">declared/observed gap in both ways,</text>
+  <text x="596" y="450" font-size="12" fill="#222222">compositions detected, attempts classified.</text>
+  <text x="596" y="472" font-size="12" fill="#555555">The code decides the nature; no model does.</text>
+
+  <path d="M705,336 L705,366" fill="none" stroke="#3a3a44" stroke-width="1.8" marker-end="url(#fleche)"/>
+  <text x="713" y="356" font-size="11.5" fill="#3a3a44">is read by</text>
+
+  <!-- ===================== the report ===================== -->
+  <rect x="880" y="228" width="292" height="118" rx="6" fill="#f4f6fa" stroke="#5b6b86" stroke-width="1.5"/>
+  <text x="896" y="254" font-size="14" font-weight="bold" fill="#22304a">The report</text>
+  <text x="896" y="276" font-size="12" fill="#222222">What the agent did, what it overflowed,</text>
+  <text x="896" y="292" font-size="12" fill="#222222">what it declared and never used — and the</text>
+  <text x="896" y="308" font-size="12" fill="#222222">limits of the measurement itself.</text>
+  <text x="896" y="330" font-size="12" fill="#555555">A gap report for the vendor, without client</text>
+  <text x="896" y="346" font-size="12" fill="#555555">data.</text>
+
+  <path d="M834,420 L876,300" fill="none" stroke="#3a3a44" stroke-width="1.8" marker-end="url(#fleche)"/>
+  <text x="836" y="380" font-size="11.5" fill="#3a3a44">produces</text>
+
+  <!-- ===================== the attestation ===================== -->
+  <rect x="880" y="370" width="292" height="118" rx="6" fill="#eaf3ec" stroke="#3f7a4a" stroke-width="2"/>
+  <text x="896" y="396" font-size="14" font-weight="bold" fill="#123d1c">The attestation</text>
+  <text x="896" y="418" font-size="12" fill="#1d1d1d">One page, dated, chained, poor in details,</text>
+  <text x="896" y="434" font-size="12" fill="#1d1d1d">free of client data — and carrying its own</text>
+  <text x="896" y="450" font-size="12" fill="#1d1d1d">statistical scope.</text>
+  <text x="896" y="472" font-size="12" fill="#555555">A rare behaviour is NOT excluded.</text>
+
+  <path d="M1026,350 L1026,366" fill="none" stroke="#3a3a44" stroke-width="1.8" marker-end="url(#fleche)"/>
+  <text x="1034" y="362" font-size="11.5" fill="#3a3a44">is sealed into</text>
+
+  <!-- ===================== the sponsor ===================== -->
+  <rect x="24" y="512" width="1150" height="96" rx="6" fill="#fdf6e6" stroke="#a07c1e" stroke-width="1.5"/>
+  <text x="40" y="538" font-size="14" font-weight="bold" fill="#6b5210">The sponsor decides — Sas never authorises production</text>
+  <text x="40" y="560" font-size="12" fill="#222222">Sas provides the airlock, the measurement and the attestation. The go / no-go belongs to the customer's sponsor alone,</text>
+  <text x="40" y="578" font-size="12" fill="#222222">and the portal requires an explicit, traced human agreement. Three gestures are never automatic: granting an undeclared</text>
+  <text x="40" y="596" font-size="12" fill="#222222">permission, putting a non-homologated agent into production, and ignoring a critical finding.</text>
+
+  <!-- ===================== the limits ===================== -->
+  <rect x="24" y="628" width="1150" height="106" rx="6" fill="#f2f2f4" stroke="#8b8b96" stroke-width="1.5"/>
+  <text x="40" y="654" font-size="14" font-weight="bold" fill="#2b2b33">What this does not cover — printed on every report, on every attestation</text>
+  <text x="40" y="676" font-size="12" fill="#222222">- An homologation over N replays proves nothing beyond the published bound; a rare behaviour is not excluded.</text>
+  <text x="40" y="694" font-size="12" fill="#222222">- Shadow mode does not reveal behaviour that depends on real data; the report lists the scenarios concerned.</text>
+  <text x="40" y="712" font-size="12" fill="#222222">- Fine covert channels — encoding in a resource name, response-time modulation — are not detected at launch.</text>
+  <text x="40" y="730" font-size="12" fill="#222222">- An agent that refuses instrumentation is declared not measurable, never compliant. Sas judges access behaviour, not answer quality.</text>
+</svg>
