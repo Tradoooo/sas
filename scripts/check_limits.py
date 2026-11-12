@@ -23,6 +23,9 @@ SKIP_DIRS = {
     ".build",
     "cdk.out",
     ".mypy_cache",
+    # The mutation harness copies the tree here and breaks it on purpose: a
+    # deliberately mutated file is not a size violation.
+    ".mutants",
 }
 
 

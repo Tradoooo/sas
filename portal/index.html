@@ -26,6 +26,11 @@
 
 <div id="mode-bandeau" class="mode-bandeau cache">chargement…</div>
 
+<div id="juge-bandeau" class="mode-bandeau cache">
+  <strong>Mode juge</strong> — la démo déroule seule, sans un seul clic.
+  <span id="juge-titre"></span>
+</div>
+
 <main>
   <section class="colonne gauche">
     <h2>Registre de flotte</h2>
@@ -109,6 +114,47 @@
       pas : Sas raisonne sur les <strong>chaînes d'appels</strong> (§16).
     </p>
     <ul id="compositions-liste"></ul>
+
+    <h2>Rejeu du journal — appel par appel</h2>
+    <p class="note" id="replay-contexte">—</p>
+    <div class="replay-commandes">
+      <button type="button" id="replay-debut" title="Premier appel">⏮</button>
+      <button type="button" id="replay-prec" title="Appel précédent">◀</button>
+      <button type="button" id="replay-lecture" title="Lecture automatique">▶ Lecture</button>
+      <button type="button" id="replay-suiv" title="Appel suivant">▶</button>
+      <span class="note" id="replay-position"></span>
+    </div>
+    <p class="note legende">
+      <span class="pastille autorise"></span> autorisé par Policy
+      <span class="pastille refuse"></span> refusé — hors périmètre
+      <span class="pastille bornage"></span> refusé — bornage (budget, durée, suspension) :
+      le sas s'arrête, ce n'est pas une tentative de l'agent
+    </p>
+    <ol id="replay-journal" class="journal"></ol>
+
+    <h2>Chaîne causale de la session</h2>
+    <p class="note">
+      Le graphe des appels, dans l'ordre. Une politique par outil ne voit que des
+      appels isolés ; ce qui compte est la <strong>chaîne</strong> — deux outils
+      autorisés séparément peuvent former une exfiltration (§16).
+    </p>
+    <div id="replay-graphe" class="graphe"></div>
+
+    <h2>Avant / après filtrage de l'exploration</h2>
+    <div class="avant-apres">
+      <div class="panneau brut">
+        <span class="chiffre" id="filtrage-bruts">–</span>
+        <span class="legende">refus bruts dans le journal</span>
+        <p class="note">Ce qu'un journal brut montre à un RSSI.</p>
+      </div>
+      <div class="fleche" aria-hidden="true">→</div>
+      <div class="panneau filtre">
+        <span class="chiffre" id="filtrage-restent">–</span>
+        <span class="legende">découvertes à lire</span>
+        <p class="note" id="filtrage-detail">—</p>
+      </div>
+    </div>
+    <p class="note" id="filtrage-explication">—</p>
 
     <h2>Attestation</h2>
     <pre id="attestation">—</pre>
