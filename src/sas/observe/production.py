@@ -34,6 +34,7 @@ class MiseEnProductionRefusee(Exception):
 
 @dataclass(slots=True)
 class SessionObservee:
+    identifiant: str
     agent_id: str
     tenant_id: str
     ouverte_le: datetime
@@ -111,7 +112,12 @@ class ControleProduction:
             raise MiseEnProductionRefusee("aucune session observée sans attestation valide et accord tracé")
         if self.suspendu:
             raise MiseEnProductionRefusee("agent suspendu : les identifiants sont coupés")
-        session = SessionObservee(agent_id=self.agent_id, tenant_id=self.tenant_id, ouverte_le=maintenant())
+        session = SessionObservee(
+            identifiant=identifiant,
+            agent_id=self.agent_id,
+            tenant_id=self.tenant_id,
+            ouverte_le=maintenant(),
+        )
         self.sessions[identifiant] = session
         return session
 

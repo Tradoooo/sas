@@ -61,7 +61,9 @@ def test_KPI2_refuse_d_etre_devine() -> None:
 
 
 def test_KPI3_le_cout_est_mesure_et_pas_estime() -> None:
-    """ENF-10 — the cost comes from the counters."""
+    """ENF-10 — the cost comes from the counters.
+    EF-52 — coût mesuré par tenant, exposé au responsable de compte.
+    """
     dossier = _dossier("demo-conforme")
     mesure = module_kpi.kpi_3(dossier.campagne.cout_mesure.total, 2)
     assert mesure.mesure is True

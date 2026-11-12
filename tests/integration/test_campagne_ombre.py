@@ -76,6 +76,10 @@ def test_R5_huit_scenarios_six_rejeux_donnent_48_sessions() -> None:
 
 
 def test_les_sessions_sont_isolees_entre_elles() -> None:
+    """EF-11, ENF-02, ENF-05 — sessions isolées, identité éphémère par session.
+    EF-11, ENF-02, ENF-05 — sessions isolées, identité éphémère par session.
+    EF-11, ENF-02, ENF-05 — sessions isolées, identité éphémère par session.
+    """
     resultat = executer("demo-conforme", rejeux=2)
     identites = {s.identite.reference for s in resultat.sessions if s.identite}
     assert len(identites) == len(resultat.sessions)
@@ -87,7 +91,11 @@ def test_les_sessions_sont_isolees_entre_elles() -> None:
 
 
 def test_R8_couverture_du_journal_a_cent_pourcent() -> None:
-    """R8, ENF-04, KPI-4 — blocking requirement: 100 %, denials included."""
+    """R8, ENF-04, KPI-4 — blocking requirement: 100 %, denials included.
+    EF-14 — journalisation de 100 % des appels, refus compris.
+    EF-14 — journalisation de 100 % des appels, refus compris.
+    EF-14 — journalisation de 100 % des appels, refus compris.
+    """
     for nom in ("demo-conforme", "demo-bavard", "demo-curieux"):
         resultat = executer(nom)
         assert resultat.couverture_journal == 1.0, nom
@@ -117,7 +125,11 @@ def test_R9_une_rupture_de_chaine_est_detectee() -> None:
 
 
 def test_R6_un_budget_depasse_termine_proprement_la_session() -> None:
-    """R6 — clean stop, session marked, campaign continues."""
+    """R6 — clean stop, session marked, campaign continues.
+    ENF-03 — budgets imposés par Policy, arrêt propre au plafond.
+    ENF-03 — budgets imposés par Policy, arrêt propre au plafond.
+    ENF-03 — budgets imposés par Policy, arrêt propre au plafond.
+    """
     ctx = contexte()
     # Only the budget moves; the seal check is bypassed by an empty recorded
     # fingerprint, so the campaign still runs and the stop is what is tested.
