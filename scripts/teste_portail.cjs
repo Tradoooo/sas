@@ -48,11 +48,14 @@ function verifier(cible, nom, ok, detail = "") {
   resultats.push({ cible, nom, ok: !!ok, detail: String(detail).slice(0, 220) });
 }
 
+/* Attendu : le LIBELLÉ i18n, jamais l'identifiant interne. Afficher
+ * « HOMOLOGUE_SOUS_CONDITIONS » à un lecteur est un défaut, pas un style ;
+ * les libellés viennent de sas.i18n via le jeu de données. */
 const VERDICTS_ATTENDUS = {
-  "demo-conforme": "HOMOLOGUÉ",
-  "demo-bavard": "HOMOLOGUÉ SOUS CONDITIONS",
-  "demo-curieux": "REFUSÉ",
-  "demo-opaque": "NON MESURABLE",
+  "demo-conforme": "Homologué",
+  "demo-bavard": "Homologué sous conditions",
+  "demo-curieux": "Refusé",
+  "demo-opaque": "Non mesurable",
 };
 
 async function nouvellePage(navigateur) {
@@ -160,10 +163,23 @@ async function testerPublic(navigateur) {
   const lu = await page.evaluate(() =>
     [...document.querySelectorAll("#registre tbody tr")].map((tr) => tr.children[2].textContent.trim()).sort().join(",")
   );
-  verifier(cible, "registre == data/demo.json", lu === attendu, `page=${lu} json=${attendu}`);
+  // Le registre affiche les libellés, le JSON porte les identifiants : on
+  // compare donc les libellés attendus pour chaque identifiant du JSON.
+  const libellesVerdict = donnees.libelles.fr.verdict;
+  const attendusLibelles = donnees.agents.map((a) => libellesVerdict[a.resume.verdict]).sort().join(",");
+  verifier(
+    cible,
+    "registre == data/demo.json (libellés)",
+    lu === attendusLibelles,
+    `page=${lu} json=${attendusLibelles}`
+  );
 
   // Hygiène : aucune requête hors origine, aucune erreur console.
-  const horsOrigine = page._requetes.filter((u) => !u.startsWith("https://baptistefaisy.github.io/"));
+  // L'origine de référence est celle de la page réellement chargée, pas une URL
+  // codée en dur : la même batterie tourne contre le site public et contre un
+  // serveur local.
+  const origine = new URL(page.url()).origin;
+  const horsOrigine = page._requetes.filter((u) => !u.startsWith(origine));
   verifier(cible, "aucune requête ne quitte l'origine", horsOrigine.length === 0, horsOrigine.slice(0, 3).join(" "));
   verifier(cible, "aucune erreur console", page._erreurs.length === 0, page._erreurs.slice(0, 2).join(" | "));
 
