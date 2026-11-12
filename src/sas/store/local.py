@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from dataclasses import replace
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from sas.identifiants import maintenant
 from sas.journal.chaine import JournalChaine
@@ -255,13 +255,25 @@ class DepotLocal:
 
     # -- housekeeping ------------------------------------------------------ #
     def purger(self, jours: int) -> int:
-        """ENF-12 — the retention purge is effective and provable."""
+        """ENF-12 — the retention purge is effective and provable.
+
+        `purge.purger_attestee()` wraps this call and produces the signed proof:
+        what was removed, when, by whom, and the chain root before and after.
+        """
         limite_effective = min(jours, self._tenant.retention_jours)
         seuil = maintenant() - timedelta(days=limite_effective)
         avant = len(self._journal)
         self._journal.purger_avant(seuil)
         self._sessions = {k: v for k, v in self._sessions.items() if v.debut >= seuil}
         return avant - len(self._journal)
+
+    def entrees_expirees(self, seuil: datetime) -> tuple[EntreeJournal, ...]:
+        """The entries a purge at `seuil` would remove.
+
+        Used by the purge attestation to name what it removed — identifiers and
+        fingerprints, never the content.
+        """
+        return tuple(e for e in self._journal.entrees() if e.horodatage < seuil)
 
     def cout_cumule(self) -> dict[str, float]:
         """EF-52 — measured cost per campaign, plus the total."""

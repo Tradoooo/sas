@@ -130,7 +130,9 @@ def _projection(entree: EntreeJournal) -> dict[str, object]:
 
 def _serialisable(entree: EntreeJournal) -> dict[str, object]:
     donnees = asdict(entree)
-    donnees["decision"] = entree.decision.value
+    # The decision is an enum in the type, but the journal is fed by many code
+    # paths: a plain value must not make the chain crash.
+    donnees["decision"] = getattr(entree.decision, "value", entree.decision)
     return {cle: json.loads(json.dumps(valeur, default=str)) for cle, valeur in donnees.items()}
 
 
