@@ -19,8 +19,18 @@ let MODE = "statique";
 let DONNEES = null;
 let AGENT = null;
 let LANGUE = "fr";
+let LIBELLES = { fr: { verdict: {}, nature: {} }, en: { verdict: {}, nature: {} } };
 
 const $ = (id) => document.getElementById(id);
+
+/* The page must never print an internal identifier: HOMOLOGUE_SOUS_CONDITIONS
+ * is an enum value, "Homologué sous conditions" is a verdict. The labels come
+ * from `sas.i18n` through the dataset (static) or /health (live) — one source,
+ * no copy here that could drift. */
+function libelle(famille, valeur) {
+  const table = (LIBELLES[LANGUE] || {})[famille] || {};
+  return table[valeur] || valeur;
+}
 
 function texte(id, valeur) {
   $(id).textContent = valeur;
@@ -70,9 +80,18 @@ async function appel(chemin, options = {}) {
 }
 
 async function tenterLive() {
+  /* The mode is decided by a file that always answers: the static deployment
+   * ships `api-status.json` (mode "statique"), the live API serves the same
+   * path with mode "direct". Probing /health instead would 404 on Pages and
+   * leave an unexplained error in the reader's console. */
   try {
+    const reponse = await fetch("api-status.json", { cache: "no-store" });
+    if (!reponse.ok) return false;
+    const statut = await reponse.json();
+    if (statut.mode !== "direct") return false;
     const sante = await fetch(API + "/health").then((r) => r.json());
     JETON = sante.jeton_demo || "";
+    LIBELLES = sante.libelles || LIBELLES;
     if (!JETON) return false;
     const registre = await appel("/registre");
     return Array.isArray(registre);
@@ -87,6 +106,7 @@ async function chargerStatique() {
   const reponse = await fetch("data/demo.json");
   if (!reponse.ok) throw new Error("data/demo.json introuvable");
   DONNEES = await reponse.json();
+  LIBELLES = DONNEES.libelles || LIBELLES;
   MODE = "statique";
   bandeau("statique", DONNEES.genere_le);
   afficherRegistre(DONNEES.registre);
@@ -103,9 +123,11 @@ function afficherRegistre(lignes) {
   }
   for (const agent of lignes) {
     const tr = document.createElement("tr");
-    tr.innerHTML = `<td>${agent.nom}</td><td>${agent.version}</td><td>${agent.statut}</td>`;
+    tr.innerHTML =
+      `<td>${agent.nom}</td><td>${agent.version}</td>` +
+      `<td class="statut ${agent.statut}">${libelle("verdict", agent.statut)}</td>`;
     tr.addEventListener("click", () => {
-      const trouve = DONNEES.agents.find((a) => a.nom === agent.nom);
+      const trouve = (DONNEES ? DONNEES.agents : []).find((a) => a.nom === agent.nom);
       if (trouve) {
         AGENT = trouve;
         afficherAgent(trouve);
@@ -118,7 +140,7 @@ function afficherRegistre(lignes) {
 function afficherAgent(agent) {
   const r = agent.resume;
   const verdict = $("verdict");
-  verdict.textContent = (r.verdict || "—").toUpperCase();
+  verdict.textContent = libelle("verdict", r.verdict || "");
   verdict.className = "verdict " + (r.verdict || "");
 
   texte("sessions", r.sessions);
@@ -130,18 +152,20 @@ function afficherAgent(agent) {
 
   const decouvertes = $("decouvertes").querySelector("tbody");
   decouvertes.innerHTML = "";
-  const libelles = {
-    exploration: ["Exploration", "filtrée — bruit de raisonnement"],
-    debordement: ["Débordement", "manifeste à compléter"],
-    tentative: ["Tentative", "à investiguer"],
-    hostile: ["Hostile", "refus d'homologation"],
-    indeterminee: ["Indéterminée", "revue humaine"],
+  /* The "treatment" column is what makes the filtering of §13.5 visible rather
+   * than implicit: the reader sees that exploration was counted, then dropped. */
+  const traitements = {
+    exploration: ["exploration", "filtrée — bruit de raisonnement"],
+    debordement: ["debordement", "manifeste à compléter"],
+    tentative: ["tentative", "à investiguer"],
+    hostile: ["hostile", "refus d'homologation"],
+    indeterminee: ["indeterminee", "revue humaine"],
   };
   for (const [cle, compte] of Object.entries(r.decouvertes || {})) {
-    const [nom, traite] = libelles[cle] || [cle, ""];
+    const [, traite] = traitements[cle] || [cle, ""];
     const tr = document.createElement("tr");
     if (cle === "exploration") tr.className = "filtre";
-    tr.innerHTML = `<td>${nom}</td><td>${compte}</td><td>${traite}</td>`;
+    tr.innerHTML = `<td>${libelle("nature", cle)}</td><td>${compte}</td><td>${traite}</td>`;
     decouvertes.appendChild(tr);
   }
 
@@ -216,6 +240,7 @@ async function lancerCampagne(evenement) {
       n_rejeux: Number($("rejeux").value),
       graine: Number($("graine").value),
     };
+    CAMPAGNE = resultat.id || "";
     afficherAgent(AGENT);
     await chargerRapportLive();
     etat("campagne terminée", "ok");
@@ -271,6 +296,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (MODE === "statique" && AGENT) {
         texte("rapport", LANGUE === "en" ? AGENT.rapport_en : AGENT.rapport_fr);
         texte("portee", LANGUE === "en" ? AGENT.portee_en : AGENT.portee_fr);
+        afficherAgent(AGENT);
+        afficherRegistre(DONNEES.registre);
       }
       chargerRapportLive();
     });

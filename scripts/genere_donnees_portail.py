@@ -25,7 +25,10 @@ RACINE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(RACINE / "src"))
 sys.path.insert(0, str(RACINE))
 
-from sas import constantes  # noqa: E402
+from sas import (  # noqa: E402  - sys.path is set just above
+    constantes,
+    libelles,
+)
 from sas.cli_partage import charger_contexte, invite, lancer  # noqa: E402
 from sas.homologation import Dossier, resume  # noqa: E402
 from sas.rapports import attestation as module_attestation  # noqa: E402
@@ -174,6 +177,7 @@ def _construire(*, rejeux: int, graine: int, genere_le: str) -> dict[str, Any]:
         "graine": graine,
         "rejeux_par_scenario": rejeux,
         "scenarios": list(constantes.SCENARIOS_LANCES),
+        "libelles": libelles.tous(),
         "avertissement": (
             "Synthetic demonstration data. The three guest agents are built for "
             "this demo and labelled as such; no real vendor agent is used, and no "

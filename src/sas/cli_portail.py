@@ -36,5 +36,8 @@ def servir(*, port: int = 8123, hote: str = "127.0.0.1") -> int:
     app = creer_app()
     app.mount("/", StaticFiles(directory=str(PORTAIL), html=True), name="portail")
     print(f"Sas — portail sur http://{hote}:{port}/  (Ctrl-C pour arrêter)")
-    uvicorn.run(app, host=hote, port=port, log_level="warning")
+    # `ws="none"`: the portal is plain request/response REST, and uvicorn's
+    # websocket support pulls in a `websockets` build that is not guaranteed on
+    # a worker. Declining it removes a dependency and a startup failure mode.
+    uvicorn.run(app, host=hote, port=port, log_level="warning", ws="none")
     return 0
