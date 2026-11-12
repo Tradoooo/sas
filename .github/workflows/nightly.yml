@@ -1,0 +1,143 @@
+name: nightly
+
+# The nightly run: what the five-minute PR budget cannot carry.
+#
+# The user rule of 2026-10-24 caps every job at five minutes, and
+# `.github/ci-budget/check_timeouts.py` enforces it on this file too — so the
+# nightly is split into small independent jobs rather than one long one. Nothing
+# here runs on a pull request: a PR must stay fast, and heavy work belongs here.
+#
+# Every step is conditional on its script existing, because the nightly is merged
+# before the lots it exercises: a missing tool must skip, not fail.
+
+on:
+  schedule:
+    - cron: "17 2 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly-${{ github.run_id }}
+  cancel-in-progress: false
+
+env:
+  PYTHONPATH: src
+
+jobs:
+  campagne-complete:
+    name: campagne N=6 sur les huit scénarios
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '["self-hosted","sas-worker"]') }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Campagne de démonstration au niveau standard
+        run: |
+          # §26.4 règle 2 : N = 2 en développement, N = 6 pour les campagnes de
+          # démonstration. C'est ici que le niveau 6 tourne vraiment.
+          python3 -m sas.cli demo --rejeux 6 --graine 11
+      - name: Suite complète, marqueurs slow compris
+        run: python3 -m pytest tests -q -m "not aws" --maxfail=20
+
+  couverture:
+    name: couverture de code mesurée
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '["self-hosted","sas-worker"]') }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Mesure
+        run: |
+          python3 -m pip install --quiet --user coverage 2>/dev/null || true
+          if ! python3 -c "import coverage" 2>/dev/null; then
+            echo "coverage absent du runner : mesure sautée (non bloquant)"; exit 0
+          fi
+          python3 -m coverage run --source=src/sas -m pytest tests -q -m "not slow and not aws" || true
+          python3 -m coverage report -m | tail -40
+          # Le seuil est un plancher, pas une cible : il empêche une régression
+          # silencieuse, il ne pousse pas à écrire des tests qui ne prouvent rien.
+          python3 -m coverage report --fail-under=70 -q
+
+  mutation:
+    name: force des tests sur le cœur intellectuel
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '["self-hosted","sas-worker"]') }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Mutation de classification.py et du détecteur de compositions
+        run: |
+          if [ ! -f scripts/mutation.py ]; then
+            echo "scripts/mutation.py absent (lot en cours) : saut"; exit 0
+          fi
+          python3 scripts/mutation.py --complet --rapport /tmp/mutation.md
+          tail -30 /tmp/mutation.md
+
+  fuzzing:
+    name: adversaire de compositions
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '["self-hosted","sas-worker"]') }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Recherche de chaînes non couvertes
+        run: |
+          if [ ! -f scripts/fuzz_compositions.py ]; then
+            echo "scripts/fuzz_compositions.py absent (lot en cours) : saut"; exit 0
+          fi
+          python3 scripts/fuzz_compositions.py --graine 7 --n 20000
+
+  banc:
+    name: banc d'évaluation complet
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '["self-hosted","sas-worker"]') }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Les dix mesures du §27
+        run: |
+          if [ ! -d eval ]; then
+            echo "eval/ absent (lot 18 en cours) : saut"; exit 0
+          fi
+          PYTHONPATH=src python3 -m pytest tests/unit/eval -q -m "slow or not slow" --maxfail=10
+
+  donnees-portail:
+    name: reproductibilité du jeu de données public
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '["self-hosted","sas-worker"]') }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Régénération et comparaison octet à octet
+        run: |
+          # ENF-11 vérifié sur l'artefact public : ce que la page affiche doit
+          # être ce que le moteur produit aujourd'hui, à l'horloge près (figée).
+          HORODATAGE=$(python3 -c "import json;print(json.load(open('portal/data/demo.json'))['genere_le'])")
+          python3 scripts/genere_donnees_portail.py --genere-le "$HORODATAGE" --sortie /tmp/demo-nuit.json
+          diff -u portal/data/demo.json /tmp/demo-nuit.json && echo "REPRODUCTIBLE"
+
+  conformite:
+    name: conformité de la soumission
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '["self-hosted","sas-worker"]') }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Garde de soumission et matrice de traçabilité
+        run: python3 scripts/check_contest.py
