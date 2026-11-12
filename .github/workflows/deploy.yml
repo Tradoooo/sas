@@ -1,0 +1,100 @@
+name: deploy
+
+# Publishes the portal to GitHub Pages so the demo is reachable by anyone, with
+# no AWS account and no cost, until the end of the judging period (ENF-16: the
+# solution stays online for free until 22 January 2027).
+#
+# Two jobs, both under the 5-minute CI budget (user rule 2026-10-24):
+#
+#   verifier  — regenerates portal/data/demo.json with the REAL engine and
+#               diffs it against the committed file. If they differ, the public
+#               page was showing stale numbers: the build fails. This is what
+#               makes the static page trustworthy rather than decorative.
+#   publier   — uploads portal/ and deploys it.
+#
+# Never runs on a pull request: the deploy is a main-only concern, and a PR must
+# not spend the budget on it.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  verifier:
+    name: verifier
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout (shallow)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Tooling
+        run: python3 -m pip install --quiet pyyaml
+
+      - name: Regenerate the portal dataset with the real engine
+        run: |
+          set -euo pipefail
+          # Reuse the committed timestamp so the comparison is byte-for-byte:
+          # only the measurements may differ, never the clock.
+          HORODATAGE=$(python3 -c "import json;print(json.load(open('portal/data/demo.json'))['genere_le'])")
+          PYTHONPATH=src python3 scripts/genere_donnees_portail.py \
+            --genere-le "$HORODATAGE" --sortie /tmp/demo-regenere.json
+          if diff -u portal/data/demo.json /tmp/demo-regenere.json; then
+            echo "OK — les données publiées sont celles que le moteur produit aujourd'hui"
+          else
+            echo "::error::portal/data/demo.json est périmé : régénérer et committer"
+            exit 1
+          fi
+
+      - name: The published page carries no client content
+        run: |
+          set -euo pipefail
+          PYTHONPATH=src python3 - <<'PY'
+          import json
+          from sas.rapports.editeur import sans_donnee_client
+
+          donnees = json.load(open("portal/data/demo.json", encoding="utf-8"))
+          for agent in donnees["agents"]:
+              assert sans_donnee_client(agent["rapport_editeur"]), agent["nom"]
+          print("OK — aucun contenu client dans les rapports publiés")
+          PY
+
+  publier:
+    name: publier
+    needs: verifier
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout (shallow)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload the portal
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: portal
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

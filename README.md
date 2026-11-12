@@ -7,6 +7,19 @@ Built for the *AWS Agentic MSP Hackathon 2026*, **Track 2 — Deliver AI-Driven
 Outcomes for Customers**, targeting the *Best Amazon Bedrock AgentCore
 Implementation* special prize.
 
+**Live demo (public, no account, no install):**
+<https://baptistefaisy.github.io/sas/>
+
+The page shows four synthetic guest agents going through the airlock and coming
+out with four different outcomes — approved, approved with conditions, refused,
+and declared not measurable — with the measured journal coverage, the declared
+vs observed gaps, the detected compositions, the one-page attestation and its
+statistical scope. It runs in **static mode**: GitHub Pages has no Python behind
+it, so the figures come from `portal/data/demo.json`, produced by running the
+real engine. The page says so, and `deploy.yml` regenerates and diffs that file
+on every push to `main` — a stale public page fails the build. For a live
+campaign, run `make portail` locally.
+
 > A customer wants to plug a vendor's AI agent into its AWS environment. Its
 > CISO refuses — and is right to. The agent will hold credentials, make calls,
 > read data, and **nobody knows what it actually does**.

@@ -11,23 +11,33 @@
 | Track | form | 🟢 Track **2** — Deliver AI-Driven Outcomes for Customers | — |
 | AWS AI service | form + README | 🟡 AgentCore (6 components) ported and running **offline** (`src/sas/agentcore/`); real AWS backend (`aws.py`) not written (lot 17) | lot 17 (AWS backend, IaC) |
 | Description | Devpost, English | 🟢 `README.md`, `docs/HLD.md` (this lot) | paste into Devpost |
-| Deployed URL | CloudFront | 🔴 no portal yet (lot 14) | deploy portal with judge credentials |
-| Repository | GitHub, private, shared with the two rule-book addresses | 🟢 repo exists; CI green | share with the two addresses; keep `main` protected (Mergify) |
+| Deployed URL | GitHub Pages (public) | 🟢 **https://baptistefaisy.github.io/sas/** — the portal is published on every push to `main` by `.github/workflows/deploy.yml` | a CloudFront URL with the live API (no AWS account here) |
+| Repository | GitHub, public | 🟢 repo exists; CI green; `main` protected (Mergify is the only merge driver) | — |
 | Video | 3 min, YouTube public, English | 🟡 [`docs/VIDEO.md`](VIDEO.md) written (13 shots, EN voice-over) | **film and publish** |
 | Diagram | Mermaid + SVG | 🟢 [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) (Mermaid) + [`docs/architecture.svg`](architecture.svg) | — |
 | HLD | high-level design | 🟢 [`docs/HLD.md`](HLD.md) | — |
 
-### Honest gaps that block the judge's experience
+### Honest gaps that remain
 
-* **Portal** (`portal/`) and **API** (`src/sas/api/`) are not in the tree
-  (lot 14): there is no deployed URL to share yet.
-* **`make demo`/`make smoke`/`make attest`** are not wired (lot 20): the CLI
-  imports `sas.cli_demo`/`sas.cli_smoke`, which do not exist. The judge can
-  reproduce the pipeline with the script in `TEST-INSTRUCTIONS.md` §5.
-* **`make contest`** reports 6 blockers on 2026-11-11: the 5 submission
-  documents this lot writes, in place from this delivery, plus a lot-9/lot-0
-  mismatch on `regles/` (the guard expects 3+ YAML files; lot 9 delivered the 3
-  rules in one file).
+* **No live API behind the public URL.** GitHub Pages serves static files, so
+  `https://baptistefaisy.github.io/sas/` runs in **static mode**: it shows
+  `portal/data/demo.json`, which was produced by running the real engine on the
+  synthetic demo data. The page says so in a banner. To launch a campaign live,
+  run `make portail` locally (or deploy `infra/cdk`, which maps the same routes
+  to API Gateway + Lambda behind CloudFront).
+* **Nothing runs on real Amazon Bedrock AgentCore today.** The six ports and the
+  AWS backend (`src/sas/agentcore/aws.py`) are written; `SAS_BACKEND=aws` needs
+  credentials, and the real AgentCore Policy syntax is still to be confirmed by
+  a test (spec §34, point 2 — the only blocking item of the project).
+* **No model call anywhere.** Pass 2 of the analyser (the model's proposal) is a
+  port with no live adapter yet; classification runs with `proposition=None`, so
+  the code decides alone. That is the conservative direction, not a weakening:
+  §13.4 forbids a model from setting a nature anyway.
+* **The video is not shot.** [`docs/VIDEO.md`](VIDEO.md) is the shot-by-shot
+  script (13 shots, English voice-over).
+* **Lot 18 (evaluation bench)** — the 20 faulty + 20 benign agents, the 100
+  hand-labelled attempts and the calibrated agent that verifies the published
+  bound (R17) — is specified but not delivered.
 * Two **code defects** recorded during this lot: `sas/ecarts.calculer` crashes
   on its own keyword mismatch; `sas/compositions.detecteur` mis-resolves its
   default rules path. Neither is owned by this lot.

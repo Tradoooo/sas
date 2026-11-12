@@ -189,3 +189,25 @@ footer h2 { margin-top: 0; }
 footer p { margin-bottom: 0; }
 
 .filtre { color: var(--sourdine); text-decoration: line-through; }
+
+.mode-bandeau {
+  margin: 0;
+  padding: 0.7rem 1.5rem;
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--bord);
+}
+
+.mode-bandeau.cache { display: none; }
+
+.mode-bandeau.live { background: #10201a; color: #9fe3c4; }
+.mode-bandeau.statique { background: #141a24; color: #a9c6e8; }
+
+.mode-bandeau code {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 0.05rem 0.3rem;
+  border-radius: 4px;
+  font-size: 0.82rem;
+}
+
+#registre tbody tr { cursor: pointer; }
+#registre tbody tr:hover { background: var(--carte); }

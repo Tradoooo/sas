@@ -32,9 +32,28 @@ PREFIXES: tuple[str, ...] = (
 )
 
 
+_HORLOGE_FIXE: datetime | None = None
+
+
+def figer_horloge(instant: datetime | None) -> None:
+    """Pin the clock, or release it with `None`.
+
+    ENF-11 requires that the same scenarios and the same seed give the same
+    conclusions. The conclusions always did; the **fingerprints** did not,
+    because the wall clock leaked into the journal timestamps and therefore into
+    the chain hash. Pinning the clock makes a whole campaign byte-for-byte
+    reproducible, which is what lets the public portal dataset be regenerated and
+    diffed in CI — a judge can re-run the generator and get identical bytes.
+
+    Production never pins it. Tests and the dataset generator do.
+    """
+    global _HORLOGE_FIXE
+    _HORLOGE_FIXE = instant
+
+
 def maintenant() -> datetime:
     """The single clock entry point: timezone-aware UTC."""
-    return datetime.now(UTC)
+    return _HORLOGE_FIXE or datetime.now(UTC)
 
 
 def nouveau(prefixe: str, graine: int | None = None, cle: str = "") -> str:

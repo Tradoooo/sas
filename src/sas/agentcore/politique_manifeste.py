@@ -37,6 +37,40 @@ from sas.types import (
 REFUS = Decision.REFUSE
 SUSPENSIONS: dict[str, str] = {}
 
+# Two families of denial, and only one of them is a finding.
+#
+# A **perimeter** denial means the agent asked for something the signed manifest
+# does not grant: that is what §13 classifies, and what the report publishes.
+# A **bounding** denial means the airlock stopped the session — budget spent,
+# duration reached, agent suspended, manifest no longer in force. Counting those
+# as out-of-scope attempts would produce exactly the false positive §16.3 warns
+# about: a conforming guest that exhausts its budget on a volume scenario would
+# be reported as "targeted attempts on a declared resource".
+REGLES_PERIMETRE: frozenset[str] = frozenset(
+    {
+        "usage-non-declare",
+        "ressource-hors-perimetre",
+        "colonnes-hors-perimetre",
+        "sortie-non-declaree",
+    }
+)
+REGLES_BORNAGE: frozenset[str] = frozenset(
+    {
+        "budget-epuise",
+        "duree-depassee",
+        "suspension",
+        "identite-revoquee",
+        "manifeste-non-valide",
+        "manifeste-perime",
+        "politique-absente",
+    }
+)
+
+
+def est_hors_perimetre(regle: str) -> bool:
+    """True when a denial is a perimeter violation, i.e. a classifiable finding."""
+    return regle in REGLES_PERIMETRE
+
 
 def deriver(manifeste: Manifeste, mode: Mode = Mode.OMBRE) -> Politique:
     """Build the applied policy from a signed manifest. The only entry point."""
