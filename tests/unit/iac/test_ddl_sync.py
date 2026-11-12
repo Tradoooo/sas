@@ -13,6 +13,9 @@ from sas.store import ddl
 
 
 def test_memes_15_tables() -> None:
+    """ENF-15 — déploiement reproductible par IaC, sans table dupliquée.
+    ENF-15 — déploiement reproductible par IaC, sans table dupliquée.
+    """
     iac = data.tables_depuis_ddl()
     assert {t["nom"] for t in iac} == set(ddl.DEFINITIONS)
     assert len(iac) == len(ddl.TABLES) == 15

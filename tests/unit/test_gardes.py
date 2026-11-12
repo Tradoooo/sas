@@ -23,6 +23,10 @@ def executer(script: str) -> subprocess.CompletedProcess[str]:
 
 
 def test_garde_de_taille_verte() -> None:
+    """ENF-14 — fichiers < 500 lignes, fonctions < 50 lignes.
+    ENF-14 — fichiers < 500 lignes, fonctions < 50 lignes.
+    ENF-14 — fichiers < 500 lignes, fonctions < 50 lignes.
+    """
     resultat = executer("check_limits.py")
     assert resultat.returncode == 0, resultat.stdout + resultat.stderr
     assert "LIMITS OK" in resultat.stdout

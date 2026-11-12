@@ -104,7 +104,12 @@ def test_arret_sequentiel_est_borne() -> None:
 
 
 def test_le_prix_de_la_confiance_est_coherent_avec_l_annexe_g() -> None:
-    """Annexe G.7 quotes $4.36 for the N = 29 level; measured here, quantized."""
+    """Annexe G.7 quotes $4.36 for the N = 29 level; measured here, quantized.
+    EF-24 — borne de confiance publiée avec la mesure.
+    EF-24 — borne de confiance publiée avec la mesure.
+    EF-24 — borne de confiance publiée avec la mesure.
+    EF-24 — borne de confiance publiée avec la mesure.
+    """
     detail = cout_pour_confiance(0.10)
     assert detail["n_rejeux"] == 29
     assert detail["sessions"] == 29 * len(constantes.SCENARIOS_LANCES)
