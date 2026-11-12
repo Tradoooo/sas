@@ -239,6 +239,20 @@ footer p { margin-bottom: 0; }
     -webkit-overflow-scrolling: touch;
   }
 
+  /* A <select> cannot shrink below its longest option, and a grid item defaults
+     to `min-width: auto`. Together they pushed the launch form 57 px past a
+     375 px viewport, so the constraint is stated explicitly. */
+  form label,
+  form select,
+  form input,
+  form button {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  select[multiple] { height: auto; }
+
   pre { font-size: 11.5px; }
 
   main { padding: 1rem; gap: 1rem; }
