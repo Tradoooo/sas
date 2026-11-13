@@ -73,7 +73,7 @@ Summary: **24 / 24 R** covered by the test corpus. **33 / 33 EF** covered by the
 | EF-43 | Keep a registry of every third-party agent of a client | **covered** — `tests/unit/registre/test_registre.py` |
 | EF-44 | Replay a specific scenario from a finding | **covered** — `tests/unit/contract/test_exigences.py::test_EF44_un_finding_se_rejoue_deterministe` |
 | EF-50 | Strictly isolate tenants: no session, journal or report crosses | **covered** — `tests/integration/test_campagne_ombre.py::test_R18_un_client_ne_lit_pas_le_journal_d_un_autre` |
-| EF-51 | Derive tenant identity from the token, never from free text | **covered** — `tests/integration/test_campagne_ombre.py::test_R18_un_client_ne_lit_pas_le_journal_d_un_autre`, `tests/unit/api/test_api.py::test_aucune_route_ne_prend_un_tenant_en_parametre`, `tests/unit/api/test_contrat_api.py::test_aucune_route_ne_prend_un_tenant_en_parametre` (+3) |
+| EF-51 | Derive tenant identity from the token, never from free text | **covered** — `tests/integration/test_campagne_ombre.py::test_R18_un_client_ne_lit_pas_le_journal_d_un_autre`, `tests/unit/api/test_api.py::test_aucune_route_ne_prend_un_tenant_en_parametre`, `tests/unit/api/test_contrat_api.py::test_aucune_route_ne_prend_un_tenant_en_parametre` (+4) |
 | EF-52 | Bound and expose the cost per tenant | **covered** — `tests/unit/kpi/test_kpi.py::test_KPI3_le_cout_est_mesure_et_pas_estime` |
 | EF-53 | Let an editor see only the gap report that concerns it | **covered** — `tests/unit/api/test_api.py::test_un_role_qui_ne_peut_rien_lire_est_refuse` |
 
@@ -93,10 +93,10 @@ Summary: **24 / 24 R** covered by the test corpus. **33 / 33 EF** covered by the
 | ENF-09 | Kill switch effective in under 5 seconds, shadow and observed | **covered** — `tests/integration/test_campagne_ombre.py::test_R7_la_suspension_coupe_les_identifiants`, `eval/banc.py` |
 | ENF-10 | Cost per homologation measured and exposed, never estimated afterwards | **covered** — `tests/integration/test_campagne_ombre.py::test_le_cout_est_mesure_et_non_estime`, `tests/unit/kpi/test_kpi.py::test_KPI3_le_cout_est_mesure_et_pas_estime` |
 | ENF-11 | Reproducibility: same scenarios, same seed, same conclusions | **covered** — `tests/integration/test_campagne_ombre.py`, `tests/unit/api/test_donnees_portail.py::test_le_jeu_de_donnees_est_reproductible`, `tests/unit/demo/test_agents.py::test_meme_graine_meme_sequence` (+4) |
-| ENF-12 | Configurable journal retention, effective and provable purge | **covered** — `tests/unit/test_nouveautes.py::test_la_purge_atteste_ce_qu_elle_a_supprime` |
+| ENF-12 | Configurable journal retention, effective and provable purge | **covered** — `tests/unit/store/test_acces.py::test_la_purge_de_retention_emporte_les_acces_expires`, `tests/unit/test_nouveautes.py::test_la_purge_atteste_ce_qu_elle_a_supprime` |
 | ENF-13 | French and English interface and reports; English submission deliverables | **covered** — `tests/unit/intervalle/test_intervalle.py::test_portee_etendue_en_anglais`, `tests/unit/rapports/test_impression.py::test_le_pdf_existe_dans_les_deux_langues`, `tests/unit/rapports/test_livrables.py::test_l_attestation_anglaise_existe_aussi` (+1) |
 | ENF-14 | Files < 500 lines, functions < 50 lines, CI ≤ 5 min | **covered** — `tests/unit/test_gardes.py::test_garde_de_taille_verte` |
-| ENF-15 | Reproducible IaC deployment, no undocumented manual step | **covered** — `tests/unit/iac/test_ddl_sync.py::test_memes_15_tables` |
+| ENF-15 | Reproducible IaC deployment, no undocumented manual step | **covered** — `tests/unit/iac/test_ddl_sync.py::test_memes_tables` |
 | ENF-16 | The solution stays online free until 2027-01-22 | **covered** — `tests/unit/contract/test_exigences.py::test_ENF16_la_solution_reste_en_ligne_sans_aws`, `tests/unit/contract/test_exigences.py::test_le_portail_publie_ne_depend_d_aucun_service_payant` |
 | ENF-17 | A non-instrumentable agent is declared not measurable, never compliant | **covered** — `tests/integration/test_campagne_ombre.py::test_R24_un_agent_non_instrumentable_ne_recoit_aucune_attestation`, `tests/unit/api/test_donnees_portail.py::test_l_opaque_n_a_pas_d_attestation`, `tests/unit/demo/test_agents.py::test_R24_l_agent_opaque_est_declare_non_mesurable` (+2) |
 

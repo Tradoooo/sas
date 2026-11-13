@@ -12,13 +12,13 @@ from infra.cdk import data
 from sas.store import ddl
 
 
-def test_memes_15_tables() -> None:
+def test_memes_tables() -> None:
     """ENF-15 — déploiement reproductible par IaC, sans table dupliquée.
     ENF-15 — déploiement reproductible par IaC, sans table dupliquée.
     """
     iac = data.tables_depuis_ddl()
     assert {t["nom"] for t in iac} == set(ddl.DEFINITIONS)
-    assert len(iac) == len(ddl.TABLES) == 15
+    assert len(iac) == len(ddl.TABLES) == 16
 
 
 def test_memes_cles() -> None:
@@ -44,3 +44,9 @@ def test_meme_ttl() -> None:
 def test_journal_porte_le_ttl() -> None:
     journal = next(t for t in data.tables_depuis_ddl() if t["nom"] == "journal")
     assert journal["ttl"] == "expire_le"
+
+
+def test_acces_porte_le_ttl_du_journal() -> None:
+    """One retention rule: the access log expires exactly like the journal."""
+    acces = next(t for t in data.tables_depuis_ddl() if t["nom"] == "acces")
+    assert acces["ttl"] == "expire_le"

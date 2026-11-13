@@ -40,6 +40,7 @@ from sas.modele.execution import (
     RessourceOmbre,
     Session,
 )
+from sas.modele.journal_acces import Acces
 from sas.modele.livrables import (
     Agent,
     ContexteTenant,
@@ -79,6 +80,7 @@ from sas.modele.mesure import (
 
 __all__ = [
     "SEVERITE",
+    "Acces",
     "ActionDerive",
     "Agent",
     "Attestation",

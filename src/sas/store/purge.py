@@ -25,7 +25,7 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from sas.identifiants import canonique, maintenant
-from sas.types import EtatChaine
+from sas.types import Acces, EtatChaine
 
 ALGORITHME = "hmac-sha256"
 
@@ -118,7 +118,7 @@ def purger_attestee(
         signature=_sceller(corps, cle),
         signataire=signataire,
         nombre_total=nombre,
-        tables=("journal", "sessions"),
+        tables=("journal", "sessions", "acces"),
     )
 
 
@@ -148,12 +148,17 @@ def _sceller(corps: dict[str, Any], cle: str) -> str:
 
 
 def _candidats(depot: Any, jours: int, instant: datetime) -> list[tuple[str, Any]]:
-    """What the purge is about to remove: the expired journal entries."""
+    """What the purge is about to remove: the expired journal entries **and**
+    the expired access records — one retention rule, not two."""
     seuil = instant - timedelta(days=jours)
+    candidats: list[tuple[str, Any]] = []
     expirees = getattr(depot, "entrees_expirees", None)
-    if expirees is None:
-        return []
-    return [(str(getattr(e, "id", i)), e) for i, e in enumerate(expirees(seuil))]
+    if expirees is not None:
+        candidats += [(str(getattr(e, "id", i)), e) for i, e in enumerate(expirees(seuil))]
+    acces_expires = getattr(depot, "acces_expires", None)
+    if acces_expires is not None:
+        candidats += [(acces.id, acces) for acces in acces_expires(seuil)]
+    return candidats
 
 
 def _age(contenu: Any, instant: datetime) -> int:
@@ -169,6 +174,9 @@ def _empreinte(contenu: Any) -> str:
 
 def _projetable(contenu: Any) -> Any:
     """Only the non-content part of an entry: what it was, not what it said."""
+    if isinstance(contenu, Acces):
+        # An access record keeps no payload: its metadata is its whole identity.
+        return contenu.resume()
     if isinstance(contenu, dict):
         return {cle: contenu.get(cle) for cle in ("id", "session_id", "horodatage", "outil")}
     return {

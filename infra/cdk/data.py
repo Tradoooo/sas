@@ -18,7 +18,7 @@ from sas.store import ddl
 
 
 def tables_depuis_ddl() -> list[dict[str, Any]]:
-    """Read the 15 table definitions of ``sas.store.ddl`` into plain dicts.
+    """Read the table definitions of ``sas.store.ddl`` into plain dicts.
 
     Each dict carries: ``nom``, ``partition``, ``tri`` (sort key or None),
     ``index`` (the global secondary indexes) and ``ttl`` (attr name or None).
@@ -40,7 +40,7 @@ def tables_depuis_ddl() -> list[dict[str, Any]]:
 
 
 def noms_tables() -> tuple[str, ...]:
-    """The 15 table names, from the definitions (asserted equal to TABLES)."""
+    """The table names, from the definitions (asserted equal to TABLES)."""
     return tuple(t["nom"] for t in tables_depuis_ddl())
 
 

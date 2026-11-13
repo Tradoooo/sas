@@ -36,7 +36,17 @@ class ServiceSas:
     tenants: dict[str, DepotLocal] = field(default_factory=dict)
     dossiers: dict[str, Dossier] = field(default_factory=dict)
     users: dict[str, ContexteTenant] = field(default_factory=dict)
-    journal_acces: JournalAcces = field(default_factory=JournalAcces)
+    journaux_acces: dict[str, JournalAcces] = field(default_factory=dict)
+
+    def journal_acces(self, contexte: ContexteTenant) -> JournalAcces:
+        """One access log per tenant, bound to that tenant's depot.
+
+        The log is persisted in the store, so the retention purge covers it and
+        the purge attestation names it — a single tenant never writes into
+        another's log (EF-51).
+        """
+        depot = self.depot(contexte)
+        return self.journaux_acces.setdefault(depot.tenant_id, JournalAcces(depot=depot))
 
     def depot(self, contexte: ContexteTenant) -> DepotLocal:
         verifier_acces(self._depot_de(contexte.tenant_id), contexte)
@@ -300,8 +310,9 @@ def _routes_sante(app: Any, service: ServiceSas) -> None:
         the log proves the rule was applied.
         """
         autoriser(ctx, "registre")
-        service.journal_acces.enregistrer(ctx, "journal-acces", "lire")
-        return {"acces": service.journal_acces.resume(ctx.tenant_id)}
+        journal = service.journal_acces(ctx)
+        journal.enregistrer(ctx, "journal-acces", "lire")
+        return {"acces": journal.resume(ctx.tenant_id)}
 
     @app.get("/health")
     def health():
