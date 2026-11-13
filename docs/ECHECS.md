@@ -16,17 +16,31 @@ is worse than none.
 
 ## 1. The real AgentCore Policy syntax is not confirmed by a test (spec §34, point 2)
 
-**What is true today.** Annex C of the spec is titled "Pseudo-politique — la
-syntaxe exacte est à confirmer à J+2". In `src/sas/agentcore/aws.py`,
-`PolicyAWS` extends the in-process engine and its
-`evaluer_agentcore_natif()` method is an explicitly unused placeholder that
-returns `None`. No test anywhere exercises a native AgentCore Policy
-conditional denial; `tests/unit/aws/test_backend_ports.py` only checks that the
-class satisfies the port protocol (`test_policy_satisfait_le_port`).
+**What is true today.** The grammar is written, and its concordance with the
+local engine is proven offline; what is missing is the proof by AWS. Annex C
+of the spec is titled "Pseudo-politique — la syntaxe exacte est à confirmer à
+J+2". `src/sas/agentcore/politique_native.py` now carries that grammar: a
+native policy is a JSON document (version, agent, manifest, tools with their
+resources and columns, outputs, budgets), and `PolicyNative` evaluates it on
+the same structured facts as `PolicyLocale`, in the order of annexe C. The
+document is derived from the manifest, never written by hand (EF-05), and a
+document that carries a key the engine does not read is refused rather than
+repaired. `tests/unit/aws/test_politique_native.py` proves that the two
+engines agree — same verdict, same rule name, same undeclared-usage marker —
+on the eight scenarios of the repository
+(`test_les_deux_moteurs_concordent_sur_les_scenarios`).
+
+**What is still not true.** That syntax has never been submitted to AWS.
+`PolicyAWS.evaluer_agentcore_natif()` therefore still returns `None`: the
+native layer is not wired, and the in-process engine of lot 6 stays in front
+of the gateway. The concordance test proves that *our* grammar is coherent and
+that *our* two engines agree; it proves nothing about the syntax AWS accepts —
+which is precisely what the specification asks to be tested rather than read.
 
 **What it would take.** One test against the real AgentCore Policy API — a
 test, not a reading (spec §34, point 2, due J+2). It is the only point the spec
-itself calls blocking.
+itself calls blocking. The grammar being written is what makes that test
+cheap: there is nothing left to invent, only to connect.
 
 **Why it is not disqualifying — and where it is.** The perimeter a guest
 submits to is enforced by `PolicyLocale` in
@@ -81,25 +95,32 @@ tables, whose chain is verified again on read-back
 `tests/unit/aws/test_store_reel.py`, marked `aws` — they need the account and
 the stack, so they never run on a pull request).
 
-**What is still not true.** The *guest execution* half never touched AWS:
-`src/sas/agentcore/aws.py` implements the six ports, but `boto3` is imported
-lazily and only inside functions; `BoiteOutilsAWS.appeler()` denies everything
-("gateway non armée : rien n'est autorisé par défaut");
-`RuntimeAWS.executer()` is a TODO pending spec §34 point 3;
+**What is still not true.** The *guest execution* half still has never touched
+AWS. `src/sas/agentcore/aws.py` implements the six ports, but `boto3` is
+imported lazily and only inside functions; `BoiteOutilsAWS.appeler()` denies
+everything ("gateway non armée : rien n'est autorisé par défaut");
 `GatewayAWS.latence_ms()` returns the module constant `_LATENCE_AJOUTEE = 0.0`,
-not a measurement. The tests (`tests/unit/aws/test_backend_ports.py`) verify
-protocol conformance and the honest errors raised without credentials or
-without boto3 (`test_backend_leve_une_erreur_honnete_sans_identifiants`,
-`test_backend_leve_une_erreur_honnete_sans_boto3`). The **model call** (§34
-point 2) is still an empty port, the API Gateway stack carries only the
-Cognito pool (a REST API without a method is rejected by CloudFormation, and
-the Lambda that would give it methods does not exist yet), and the three
-remaining stacks (`agentcore`, `orchestration`, `portail`) are synthesized but
-not deployed.
+not a measurement.
+
+The **runtime invocation** is now written against the real API —
+`src/sas/agentcore/runtime_bedrock.py` calls `InvokeAgentRuntime` on the
+`bedrock-agentcore` service, with the guest payload and one isolated session
+per replay — and its contract is checked offline by a fake client
+(`tests/unit/aws/test_runtime_bedrock.py`): the right operation, the right
+payload, and the honest errors (credentials missing, runtime missing, denial).
+**It has never been executed against AWS**: that needs credentials, a deployed
+runtime, and it costs money. The call is therefore behind an explicit flag
+(`SAS_AGENTCORE_EXECUTION=1`) that refuses, with the cost in the message, when
+it is not set. The **model call** (§34 point 2) is still an empty port, the
+API Gateway stack carries only the Cognito pool (a REST API without a method is
+rejected by CloudFormation, and the Lambda that would give it methods does not
+exist yet), and the three remaining stacks (`agentcore`, `orchestration`,
+`portail`) are synthesized but not deployed.
 
 **What it would take.** The Lambda that runs `sas.api` in the `api` stack, a
-container image for the guests on ECR, then `RuntimeAWS.executer()` — and spec
-§34 points 1 to 4 measured on the real stack.
+container image for the guests on ECR, then a real invocation of
+`RuntimeAWS.executer()` — and spec §34 points 1 to 4 measured on the real
+stack.
 
 **Disqualifying?** For real production use: yes, until the *guest* runs on
 AgentCore. For the contest: no — the data plane being real is what lets the

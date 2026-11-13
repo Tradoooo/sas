@@ -379,7 +379,9 @@ the data model exist but the AWS-backed implementation does not run here.
 | `src/sas/agentcore/politique_manifeste.py` (Policy) | **implemented, measured** — annexe C evaluated in order on structured facts; derived from the manifest, never hand-written |
 | `src/sas/politique/` (configurable engine) | **implemented, measured** — the client's policy as data (`regles/politique.yaml`), additively on the manifest perimeter: a rule may refuse (narrow, never widen) or authorise under a condition (`Decision.AUTORISE_SOUS_CONDITION`); scenario-scoped; a rule the loader cannot evaluate is refused, not ignored |
 | `src/sas/agentcore/observabilite.py` | **implemented, measured** — chain verification per session, JSON-Lines export, measured cost |
-| `src/sas/agentcore/aws.py` (real AgentCore) | **written, not wired** — the six ports implemented against `boto3`/`bedrock-agentcore` with lazy imports; `backend_aws()` raises an explicit error without credentials. No test calls AWS |
+| `src/sas/agentcore/aws.py` (real AgentCore) | **written, not wired** — the six ports implemented against `boto3`/`bedrock-agentcore` with lazy imports; `backend_aws()` raises an explicit error without credentials. The runtime invocation is written against the real API and checked by offline contract tests. No test calls AWS |
+| `src/sas/agentcore/runtime_bedrock.py` | **implemented, contract-tested offline** — the real `InvokeAgentRuntime` call on the `bedrock-agentcore` service: the guest payload as JSON, one isolated runtime session per replay, an explicit `SAS_AGENTCORE_EXECUTION=1` flag whose refusal states the cost, and honest errors (credentials missing, runtime missing, denial). It has never been executed against AWS: that needs credentials, a deployed runtime, and it costs money |
+| `src/sas/agentcore/politique_native.py` | **implemented, measured** — the grammar of the native policy (a JSON document derived from the manifest, never hand-written) and its evaluator, which renders the same verdict and the same rule as `PolicyLocale`; the concordance is proven on the eight scenarios of the repository. Not wired: AWS has not confirmed the syntax (§34, point 2) |
 | `src/sas/agentcore/fabrique.py` | **implemented** — prefers lot 6's configurable engine when present, else `PolicyLocale`; `SAS_BACKEND=aws` selects the real backend |
 | `src/sas/manifeste/` | **implemented, measured** — loader (YAML/JSON), structural + semantic validation, versioning, HMAC seal; `schemas/manifeste.schema.json` generated from the same table |
 | `src/sas/ombre/` | **implemented, measured** — replica of annexe F.2 (40 tickets / 3 injected, 25 documents, empty table, 2 marked decoys), watermark on every file, reset between replays, destruction with proof |
@@ -431,7 +433,11 @@ the data model exist but the AWS-backed implementation does not run here.
    one proposed signal, and the code decides anyway.
 2. **Nothing runs on real AgentCore today.** The ports and the AWS backend exist;
    `SAS_BACKEND=aws` requires credentials and lot 17's confirmation of the real
-   Policy syntax (§34, point 2 — the only blocking item of the project).
+   Policy syntax (§34, point 2 — the only blocking item of the project). The
+   runtime invocation is now written against the real API and proven by
+   offline contract tests, and the native policy grammar is written and proven
+   concordant with the local engine — but neither has been executed against
+   AWS, and neither may be, without credentials and without paying for it.
 3. **The public URL is local.** `sas portail` serves the portal and the API on one
    origin; the CloudFront deployment is in `infra/cdk/portal.py` and has not been
    applied to an account.

@@ -26,6 +26,7 @@ from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any
 
+from sas.agentcore import runtime_bedrock
 from sas.agentcore.local import AgentNonInstrumentable
 from sas.agentcore.observabilite import ObservabilityLocal
 from sas.agentcore.politique_manifeste import PolicyLocale
@@ -54,6 +55,9 @@ REGION_DEFAUT = "eu-west-3"
 REGION_REPLI = "eu-central-1"
 DUREE_IDENTITE_MINUTES = 30
 
+#: Le paramètre de déploiement : l'ARN du runtime AgentCore qui héberge l'invité.
+VARIABLE_ARN_RUNTIME = "SAS_AGENTCORE_RUNTIME_ARN"
+
 
 class ErreurBackendAWS(RuntimeError):
     """The AWS backend cannot run: missing dependency, credentials, or client."""
@@ -62,6 +66,15 @@ class ErreurBackendAWS(RuntimeError):
 def region_config() -> str:
     """AgentCore region, with the §34 point 1 fallback."""
     return (os.environ.get("SAS_AWS_REGION", "") or REGION_DEFAUT).strip()
+
+
+def arn_runtime_config() -> str:
+    """L'ARN du runtime AgentCore de l'invité (paramètre de déploiement).
+
+    Vide quand le déploiement n'en fournit pas : l'exécution native le dit
+    alors, au lieu d'invoquer un runtime qui n'existe pas.
+    """
+    return (os.environ.get(VARIABLE_ARN_RUNTIME, "") or "").strip()
 
 
 def _boto3():
@@ -115,7 +128,7 @@ def _assembler(session: Any, region: str) -> BackendAws:
     observabilite = ObservabilityAWS(session, region)
     memoire = MemoryAWS(session)
     passerelle = GatewayAWS(politique, identite, observabilite)
-    runtime = RuntimeAWS(session, observabilite)
+    runtime = RuntimeAWS(session, observabilite, arn_runtime=arn_runtime_config())
     return BackendAws(
         nom="aws",
         runtime=runtime,
@@ -128,12 +141,13 @@ def _assembler(session: Any, region: str) -> BackendAws:
 
 
 class RuntimeAWS:
-    """AgentCore Runtime: one isolated session per replay (spec §20.4).
+    """AgentCore Runtime : une session isolée par rejeu (spec §20.4).
 
-    TODO(confirm) — §34 point 3, due J+3: confirm that Runtime can execute an
-    arbitrary third-party image and its limits, with a minimal container. Until
-    then this class mints the session and defers the real executor to the
-    orchestrator (Strands harness), not to a guess.
+    L'appel réel est dans `sas.agentcore.runtime_bedrock` : il appelle
+    `InvokeAgentRuntime` sur le service `bedrock-agentcore`, avec le payload de
+    l'invité et une session isolée par rejeu. Il n'arrive jamais par accident —
+    le drapeau explicite `SAS_AGENTCORE_EXECUTION=1` est exigé, et le refus dit
+    ce que l'appel coûte.
     """
 
     def __init__(
@@ -141,15 +155,19 @@ class RuntimeAWS:
         session: Any = None,
         observabilite: Observability | None = None,
         tenant_id: str = "tenant-demo",
+        *,
+        arn_runtime: str = "",
+        qualifier: str = runtime_bedrock.QUALIFICATEUR_DEFAUT,
     ) -> None:
         self._session = session
         self._observabilite = observabilite
         self._tenant_id = tenant_id
+        self._arn_runtime = arn_runtime
+        self._qualifier = qualifier
+        self._derniere_reponse: dict[str, Any] = {}
 
     def _client(self):
-        if self._session is None:
-            raise ErreurBackendAWS("Runtime AgentCore : aucune session boto3 fournie")
-        return self._session.client("bedrock-agentcore")
+        return runtime_bedrock.client_runtime(self._session)
 
     def creer_session(
         self,
@@ -175,16 +193,46 @@ class RuntimeAWS:
         )
 
     def executer(self, session: Session, agent: AgentInvite, entree: dict[str, Any]) -> Session:
+        """L'exécution native, réelle : `InvokeAgentRuntime` sur AgentCore.
+
+        Le port renvoie la session ; ce que l'invité a répondu se lit dans
+        `derniere_reponse()`. Sans le drapeau d'exécution explicite, sans ARN
+        de runtime ou sans session boto3, l'appel n'a pas lieu et l'erreur dit
+        pourquoi — jamais un silence, jamais un coût caché.
+        """
         if not agent.instrumentable:
             raise AgentNonInstrumentable(agent.nom, "l'agent n'expose pas ses appels à la passerelle")
-        self._client()  # TODO(confirm) §34 point 3 : exécuter l'image tierce
+        self._derniere_reponse = runtime_bedrock.executer_dans_le_runtime(
+            self._session,
+            session,
+            agent,
+            entree,
+            arn_runtime=self._arn_runtime,
+            qualifier=self._qualifier,
+            region=region_config(),
+        )
         return session
 
+    def derniere_reponse(self) -> dict[str, Any]:
+        """Ce que la dernière invocation native a rendu."""
+        return dict(self._derniere_reponse)
+
     def suspendre(self, session: Session) -> None:
-        """Immediate stop, effective in under 5 seconds (ENF-09)."""
-        self._client()  # TODO(confirm) §34 point 3 : l'exécution native est coupée ici
+        """L'arrêt immédiat, effectif en moins de cinq secondes (ENF-09).
+
+        Sur AWS, l'opération qui l'exécute existe — `StopRuntimeSession` du
+        service `bedrock-agentcore` — mais elle n'est pas branchée ici : le
+        backend local, lui, coupe net et coupe les identifiants. §34 point 3
+        reste donc ouvert de ce côté, et le rapport le dit.
+        """
+        self._client()  # TODO(confirm) §34 point 3 : brancher StopRuntimeSession
 
     def detruire(self, session: Session) -> None:
+        """La destruction de la session native, zéro résidu (ENF-06).
+
+        Même état que `suspendre` : l'appel réel n'est pas branché, et rien ne
+        prétend l'inverse.
+        """
         self._client()  # TODO(confirm) §34 point 3 : destruction native, zéro résidu (ENF-06)
 
 
@@ -228,18 +276,27 @@ class IdentityAWS:
 
 
 class PolicyAWS(PolicyLocale):
-    """AgentCore Policy: the perimeter derived from the manifest (EF-05).
+    """AgentCore Policy : le périmètre dérivé du manifeste (EF-05).
 
-    TODO(confirm) — §34 point 2, the only blocking point of the project, due
-    J+2: confirm the **real** AgentCore Policy syntax for a conditional refusal
-    on a tool (test it, not read it). Until then this class is the documented
-    fallback of §32 line 1: the in-process policy engine of lot 6 sits in front
-    of the Gateway and enforces the broad perimeter on structured facts, so a
-    guest never receives its limits as prose — it is submitted to them.
+    §34 point 2 reste ouvert, et cette docstring dit exactement où il en est :
+    la **grammaire** de la syntaxe native est écrite, et sa concordance avec
+    le moteur local est prouvée hors ligne
+    (`sas.agentcore.politique_native`, et le test de concordance sur les huit
+    scénarios du dépôt). Ce qui manque, c'est la **preuve par AWS** : un test
+    exécuté contre la vraie API AgentCore Policy. Tant qu'il n'existe pas,
+    `evaluer_agentcore_natif()` rend `None` — non branchée — et le moteur
+    in-process de l'annexe C reste devant la passerelle, sur des faits
+    structurés : l'invité subit ses limites au lieu de les recevoir en prose.
     """
 
     def evaluer_agentcore_natif(self, contexte: ContexteAppel, faits: FaitsSession) -> Decision | None:
-        """Unused placeholder: wired once the native syntax is confirmed."""
+        """Non branchée : la syntaxe native n'est pas confirmée par AWS (§34 point 2).
+
+        La grammaire existe et elle est testée hors ligne ; ce qui manque est
+        l'exécution contre la vraie API. Rendre `None` veut dire « pas décidé
+        nativement » : le moteur local décide alors, et le rapport dit quel
+        moteur a décidé.
+        """
         del contexte, faits
         return None
 

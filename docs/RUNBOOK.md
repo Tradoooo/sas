@@ -46,6 +46,23 @@ Only `sas.agentcore.fabrique.backend_aws()` touches `sas.agentcore.aws`. If
 boto3 or the credentials are missing, `backend()` raises an **honest** error —
 it never silently falls back to the local backend.
 
+### L'exécution native, et son drapeau
+
+L'invocation réelle d'un invité (`InvokeAgentRuntime`) est derrière **deux**
+paramètres de déploiement, et elle n'a jamais lieu par accident :
+
+```bash
+export SAS_AGENTCORE_RUNTIME_ARN=arn:aws:bedrock-agentcore:eu-west-3:<compte>:runtime/<nom>
+export SAS_AGENTCORE_EXECUTION=1
+```
+
+Sans `SAS_AGENTCORE_EXECUTION=1`, `RuntimeAWS.executer()` refuse d'appeler
+l'API et le message rappelle le coût (vCPU-seconde, Go-seconde, et les modèles
+que l'invité pourrait appeler à son tour). Sans
+`SAS_AGENTCORE_RUNTIME_ARN`, l'erreur dit « runtime AgentCore absent ». Les
+tests du dépôt n'utilisent jamais ces variables : ils passent par un faux
+client boto3 local (`tests/unit/aws/test_runtime_bedrock.py`).
+
 ## 4. Operations
 
 - **Tables** — 15 DynamoDB tables generated from `sas.store.ddl`. A schema
@@ -95,10 +112,16 @@ without spending money:
 ## 7. Honest limits
 
 - AgentCore **Policy** conditional-refusal syntax is `TODO(confirm)` — §34 point
-  2. Until confirmed, the lot-6 policy engine enforces the broad perimeter in
-  front of the Gateway (§32 line 1). This fallback is documented, not hidden.
+  2. The grammar is written (`src/sas/agentcore/politique_native.py`) and its
+  concordance with the local engine is proven offline, but the syntax has never
+  been submitted to AWS, so `PolicyAWS.evaluer_agentcore_natif()` still
+  returns `None`. Until confirmed, the lot-6 policy engine enforces the broad
+  perimeter in front of the Gateway (§32 line 1). This fallback is documented,
+  not hidden.
 - AgentCore **Runtime** executing an arbitrary third-party image is `TODO(confirm)`
-  — §34 point 3. The three demo guests are synthetic and labelled as such.
+  — §34 point 3. The call is written against the real API and its contract is
+  checked offline, but it has never run against AWS. The three demo guests are
+  synthetic and labelled as such.
 - Drift detection does not cover fine hidden channels (§16.4); an unmeasurable
   agent is declared unmeasurable, never compliant (ENF-17).
 
