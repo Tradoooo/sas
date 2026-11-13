@@ -59,7 +59,7 @@ code, and a reader must see them:
 
 | Obligation (article) | What Sas provides | Where in the code | How it is proven |
 |---|---|---|---|
-| Storage limitation | Retention is a per-tenant parameter (`retention_jours`), and the purge is implemented: entries older than the retention are dropped, and the sessions with them | `src/sas/store/local.py` | *implemented, but no test proves the purge — see §5* |
+| Storage limitation | Retention is a per-tenant parameter (`retention_jours`), and the purge is implemented: entries older than the retention are dropped, the sessions and the access records with them, and the removal is attested | `src/sas/store/local.py`, `src/sas/store/purge.py` | `test_la_purge_atteste_ce_qu_elle_a_supprime`, `test_la_purge_de_retention_emporte_les_acces_expires` |
 | Integrity of the records (Art. 32) | The journal is append-only and chained by fingerprint: a deletion or a modification is detected on read | `src/sas/journal/chaine.py` | `test_R9_une_rupture_de_chaine_est_detectee`, `test_chaine_de_journal_detecte_une_modification` |
 | Attestations are immutable (Art. 32) | An attestation is never corrected, it is replaced by a new dated one | `src/sas/store/local.py` | `test_R19_l_attestation_est_pauvre_en_details_et_porte_sa_portee` |
 | Strict separation between tenants (Art. 32, EF-50) | One store per tenant; a cross-tenant read raises an explicit refusal and the attempt is journalled | `src/sas/store/local.py` | `test_R18_un_client_ne_lit_pas_le_journal_d_un_autre` |
@@ -87,7 +87,6 @@ what was homologated, until when, at what cost, and what came out of it.
 | Obligation (article) | What is true today | What it would take |
 |---|---|---|
 | The **act of sub-processing** for the observed mode (Art. 28) | Sas does not draft or sign it; §24.1 says it is necessary | A contract template, signed by the client before the observed mode opens |
-| The **purge being proved by a test** (Art. 5(1)(e), ENF-12) | `DepotLocal.purger()` and `JournalChaine.purger_avant()` are implemented; **no test asserts that the purge is effective** | One test: write entries older than the retention, purge, assert the count and the proof of destruction |
 | The **result** of a tool call being minimised (Art. 5(1)(c)) | Only the parameters are minimised; the result is stored as returned | A content-level minimiser on the result, or a rule that forbids personal data in results |
 | Secrets passed under a name other than `secret` / `mot_de_passe` (Art. 32) | The minimiser removes three named keys only | A key-name heuristic, or an explicit whitelist of journalable parameter names |
 | Data subject rights: access, rectification, erasure, objection (Art. 15-21) | A session's journal is **exportable** (`GET /sessions/{id}/journal`), which is the raw material for an access request; there is **no workflow**, no rectification, no erasure of a data subject's traces | A request workflow, and a retention rule that makes erasure meaningful |

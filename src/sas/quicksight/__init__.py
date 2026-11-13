@@ -5,7 +5,7 @@ bundle (`infra/quick/datasets.json`) can be reproduced bit-for-bit.
 
 Three datasets mirror the data model of spec §22 and are read by the CDK stack
 `infra/cdk/quick.py` — the QuickSight side does not reinvent the schema, it
-consumes the same 15 tables defined once in `sas.store.ddl`:
+consumes the same tables defined once in `sas.store.ddl`:
 
 * ``registre_flotte``  — the fleet registry, one row per third-party agent;
 * ``tendances_derive`` — drift alerts with the distance and the action taken;

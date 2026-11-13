@@ -18,6 +18,7 @@ from sas.identifiants import maintenant
 from sas.journal.chaine import JournalChaine
 from sas.store.integrite import AccesInterdit, IntegriteRefusee
 from sas.types import (
+    Acces,
     Agent,
     Attestation,
     Campagne,
@@ -57,6 +58,7 @@ class DepotLocal:
         self._enveloppes: dict[str, Enveloppe] = {}
         self._derives: dict[str, Derive] = {}
         self._attestations: dict[str, Attestation] = {}
+        self._acces: list[Acces] = []
 
     @property
     def tenant_id(self) -> str:
@@ -177,6 +179,17 @@ class DepotLocal:
     def journal(self) -> JournalChaine:
         return self._journal
 
+    # -- access log (§7) --------------------------------------------------- #
+    def enregistrer_acces(self, acces: Acces) -> None:
+        """Append one access record. Append-only: nothing removes a row here,
+        only the retention purge does (ENF-12)."""
+        if acces.tenant_id != self._tenant.id:
+            raise AccesInterdit(self._tenant.id, acces.tenant_id)
+        self._acces.append(acces)
+
+    def acces(self) -> Sequence[Acces]:
+        return tuple(self._acces)
+
     # -- measurements ------------------------------------------------------ #
     def enregistrer_tentative(self, tentative: Tentative) -> None:
         if tentative.tenant_id != self._tenant.id:
@@ -265,6 +278,7 @@ class DepotLocal:
         avant = len(self._journal)
         self._journal.purger_avant(seuil)
         self._sessions = {k: v for k, v in self._sessions.items() if v.debut >= seuil}
+        self._acces = [a for a in self._acces if a.horodatage >= seuil]
         return avant - len(self._journal)
 
     def entrees_expirees(self, seuil: datetime) -> tuple[EntreeJournal, ...]:
@@ -274,6 +288,11 @@ class DepotLocal:
         fingerprints, never the content.
         """
         return tuple(e for e in self._journal.entrees() if e.horodatage < seuil)
+
+    def acces_expires(self, seuil: datetime) -> tuple[Acces, ...]:
+        """The access records a purge at `seuil` would remove — named by the
+        purge attestation by identifier and fingerprint, never by content."""
+        return tuple(a for a in self._acces if a.horodatage < seuil)
 
     def cout_cumule(self) -> dict[str, float]:
         """EF-52 — measured cost per campaign, plus the total."""
@@ -290,6 +309,7 @@ class DepotLocal:
             "journal": len(self._journal),
             "tentatives": len(self._tentatives),
             "attestations": len(self._attestations),
+            "acces": len(self._acces),
         }
 
 

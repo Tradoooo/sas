@@ -180,13 +180,18 @@ closed.
 
 ## 4. Data model and integrity rules
 
-The data model is defined in `src/sas/store/ddl.py` (15 tables) and reused by
-the local backend (`src/sas/store/local.py` maps each to an in-memory
-structure) and, in a real deployment, by the CDK stack. The tables are:
+The data model is defined in `src/sas/store/ddl.py` — the fifteen tables of
+§22, plus one table **beyond §22**: the access log, which records the
+platform's own reads (who consulted which attestation), not an agent's
+behaviour. It is declared there rather than hand-made in the stack, so the
+schema keeps one source of truth. The definitions are reused by the local
+backend (`src/sas/store/local.py` maps each to an in-memory structure) and, in
+a real deployment, by the CDK stack. The tables are:
 
 `tenants`, `editeurs`, `agents`, `manifestes`, `scenarios`, `campagnes`,
 `sessions`, `appels`, `tentatives`, `compositions`, `ecarts`, `enveloppes`,
-`derives`, `attestations`, `journal`.
+`derives`, `attestations`, `journal` — and `acces` (beyond §22), with the
+journal's `expire_le` TTL and the same retention purge.
 
 Field-level shape lives in the frozen dataclasses exported by `src/sas/types.py`
 (from `src/sas/modele/*`).
@@ -366,8 +371,8 @@ the data model exist but the AWS-backed implementation does not run here.
 
 | Component | State |
 |---|---|
-| `src/sas/types.py` + `src/sas/modele/*` | **implemented** — the frozen domain model, 57 public names, all dataclasses frozen |
-| `src/sas/constantes.py` | **implemented** — thresholds, tariffs, KPI ids, 15 tables, 22 routes, all as data |
+| `src/sas/types.py` + `src/sas/modele/*` | **implemented** — the frozen domain model, 58 public names, all dataclasses frozen |
+| `src/sas/constantes.py` | **implemented** — thresholds, tariffs, KPI ids, the 15 tables of §22 (+ the access log), 22 routes, all as data |
 | `src/sas/agentcore/ports.py` | **implemented** — the six AgentCore ports plus `AgentInvite`, `BoiteOutils`, `ModeleAnalyse`, `ConstructeurOmbre`, `AnalyseurAcces` |
 | `src/sas/agentcore/local.py` (Runtime, Identity, Memory) | **implemented, measured** — isolated sessions, ephemeral identities with revocation, cross-replay memory only when declared |
 | `src/sas/agentcore/passerelle.py` (Gateway) | **implemented, measured** — single choke point; policy evaluated before the tool; every call journalled, denials included |
@@ -387,7 +392,7 @@ the data model exist but the AWS-backed implementation does not run here.
 | `src/sas/journal/export.py` + `audit.py` | **implemented, measured** — the export carries its own verification algorithm, so an auditor recomputes the chain with the standard library alone; the audit names the broken entry |
 | `src/sas/audit.py` | **implemented, measured** — the sealed archive for a handover (chained journal, attestation, report, fingerprint manifest). It does **not** encrypt: the standard library has no authenticated cipher, so confidentiality is delegated to KMS and the manifest says so |
 | `src/sas/store/purge.py` | **implemented, measured** — the attested purge (ENF-12): what was removed, the chain root before and after, the author, a seal. A purge without an author is refused |
-| `src/sas/api/acces.py` | **implemented** — the access log (who read which attestation, under which role, from which tenant), served by `GET /journal-acces` |
+| `src/sas/modele/journal_acces.py` + `src/sas/api/acces.py` | **implemented, measured** — the access log (who read which attestation, under which role, from which tenant), served by `GET /journal-acces`; the record is written to the tenant's store (`DepotLocal.enregistrer_acces`) and the retention purge removes it with the journal's rule, naming it in the sealed purge attestation |
 | `src/sas/manifeste/observation.py` | **implemented, measured** — the manifest draft read off a journal observation. It refuses to sign, to declare the unobserved, or to guess the purpose |
 | `src/sas/analyseur/canaux.py` | **implemented, measured** — three covert-channel indicators (resource name, timing, alternating timing); the six uncovered channels are declared in `docs/CANAUX-CACHES.md` |
 | `src/sas/surveillance.py` | **implemented, measured** — the replay from a finding (EF-44), the comparison to the reference, and the alerts: new attempt, vanished behaviour, budget exceeded, undeclared change (EF-30 to EF-34) |

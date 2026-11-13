@@ -55,10 +55,14 @@ def test_inventaire_des_routes_du_chapitre_23() -> None:
 
 
 def test_les_quinze_tables_du_chapitre_22() -> None:
-    assert constantes.TABLES == ddl.TABLES
-    assert len(ddl.TABLES) == 15
+    """§22 lists fifteen tables; the store adds exactly one more — the access
+    log — declared as beyond §22 rather than slipped into the model."""
+    assert ddl.TABLES_CHAPITRE_22 == constantes.TABLES
+    assert len(constantes.TABLES) == 15
+    assert (*constantes.TABLES, "acces") == ddl.TABLES
     assert set(ddl.DEFINITIONS) == set(ddl.TABLES)
     assert ddl.DEFINITIONS["journal"].ttl == "expire_le"
+    assert ddl.DEFINITIONS["acces"].ttl == "expire_le"
 
 
 def test_cle_composite() -> None:

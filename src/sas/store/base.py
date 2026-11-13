@@ -13,6 +13,7 @@ from collections.abc import Sequence
 from typing import Protocol, runtime_checkable
 
 from sas.types import (
+    Acces,
     Agent,
     Attestation,
     Campagne,
@@ -84,6 +85,15 @@ class Depot(Protocol):
 
     def entrees_session(self, session_id: str) -> Sequence[EntreeJournal]: ...
 
+    # -- access log (§7) — joined the port after lot 0 ---------------------- #
+    # The access log records the platform's own reads (who consulted which
+    # attestation, under which role, from which tenant), never an agent's
+    # behaviour: those are already in the chained journal. It is tenant-scoped
+    # like everything here, and the retention purge covers it.
+    def enregistrer_acces(self, acces: Acces) -> None: ...
+
+    def acces(self) -> Sequence[Acces]: ...
+
     # -- measurements ------------------------------------------------------ #
     def enregistrer_tentative(self, tentative: Tentative) -> None: ...
 
@@ -118,7 +128,11 @@ class Depot(Protocol):
 
     # -- housekeeping ------------------------------------------------------ #
     def purger(self, jours: int) -> int:
-        """Retention purge, effective and provable (ENF-12)."""
+        """Retention purge, effective and provable (ENF-12).
+
+        Covers the journal, the sessions and the access log — one retention
+        rule, not three.
+        """
 
     def cout_cumule(self) -> dict[str, float]:
         """Measured cost per campaign and per tenant (EF-52)."""

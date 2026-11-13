@@ -113,3 +113,15 @@ def test_aucune_route_ne_prend_un_tenant_en_parametre() -> None:
     """EF-51 — the tenant is derived from the token, never from the path."""
     for _, chemin in constantes.ROUTES:
         assert constantes.INTERDIT_PARAMETRE_TENANT not in chemin
+
+
+def test_le_journal_des_acces_est_ecrit_dans_le_depot_du_tenant() -> None:
+    """Idea 85, persisted: the route journals the read in the tenant's store,
+    where the retention purge covers it — not in a private list."""
+    c, service = client()
+    response = c.get("/journal-acces", headers=_header(service))
+    assert response.status_code == 200
+    depot = service.tenants["tenant-demo"]
+    assert [a.ressource for a in depot.acces()] == ["journal-acces"]
+    assert depot.acces()[0].acteur == "Analyste MSP"
+    assert response.json()["acces"][0]["ressource"] == "journal-acces"

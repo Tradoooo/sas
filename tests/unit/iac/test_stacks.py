@@ -12,12 +12,15 @@ from pathlib import Path
 from infra.cdk import agentcore, api, common, data, observability, orchestration
 
 from sas import constantes
+from sas.store import ddl
 
 CDK = Path(__file__).resolve().parents[3] / "infra" / "cdk"
 
 
-def test_15_tables_alignees_constantes() -> None:
-    assert data.noms_tables() == constantes.TABLES
+def test_tables_alignees_entre_iac_et_ddl() -> None:
+    """The CDK builds the DDL's tables, and the fifteen of §22 are all there."""
+    assert data.noms_tables() == ddl.TABLES
+    assert set(constantes.TABLES) <= set(ddl.TABLES)
 
 
 def test_index_journal_et_appels() -> None:

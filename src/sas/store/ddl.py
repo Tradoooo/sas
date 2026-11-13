@@ -1,9 +1,12 @@
-"""Sas — DynamoDB table definitions (lot 0, frozen).
+"""Sas — DynamoDB table definitions (lot 0, frozen; one addition since).
 
-One table per entity of the data model (spec §22). The definitions are the
-single source of truth: the CDK stack (`infra/cdk`) and the local backend
-(`sas.store.local`) both read them, so a schema change cannot drift between
-the infrastructure and the code.
+One table per entity of the data model (spec §22), plus **one table beyond it**:
+§22 does not describe the access log — who read which attestation, under which
+role — added later as an operational requirement of §7. It is declared here like
+any other table rather than hand-made in the stack, so the schema keeps a single
+source of truth. The CDK stack (`infra/cdk`) and the local backend
+(`sas.store.local`) both read these definitions, so a schema change cannot drift
+between the infrastructure and the code.
 """
 
 from __future__ import annotations
@@ -11,23 +14,15 @@ from __future__ import annotations
 from collections.abc import Mapping
 from dataclasses import dataclass
 
-TABLES: tuple[str, ...] = (
-    "tenants",
-    "editeurs",
-    "agents",
-    "manifestes",
-    "scenarios",
-    "campagnes",
-    "sessions",
-    "appels",
-    "tentatives",
-    "compositions",
-    "ecarts",
-    "enveloppes",
-    "derives",
-    "attestations",
-    "journal",
-)
+from sas import constantes
+
+# §22 lists fifteen tables. The access log is the sixteenth: it lives outside
+# the evidence model of §22 (it records the platform's own reads, not an agent's
+# behaviour) but it is stored with the same retention rule as the journal.
+TABLES_CHAPITRE_22: tuple[str, ...] = constantes.TABLES
+TABLES_HORS_CHAPITRE_22: tuple[str, ...] = ("acces",)
+
+TABLES: tuple[str, ...] = TABLES_CHAPITRE_22 + TABLES_HORS_CHAPITRE_22
 
 
 @dataclass(frozen=True, slots=True)
@@ -143,6 +138,14 @@ DEFINITIONS: Mapping[str, DefinitionTable] = {
         index=(("session_id", "session_id"), ("campagne_id", "campagne_id")),
         ttl="expire_le",
         notes="Append-only, chained by hash. The evidence itself.",
+    ),
+    "acces": DefinitionTable(
+        nom="acces",
+        cle="id",
+        attributs_cles=("id",),
+        index=(("tenant_id", "tenant_id"), ("acteur", "acteur")),
+        ttl="expire_le",
+        notes="Beyond §22: who read which attestation, under which role. Same TTL as the journal.",
     ),
 }
 
