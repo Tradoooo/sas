@@ -36,7 +36,7 @@ env:
 jobs:
   gate:
     name: Verdict
-    runs-on: ${{ fromJSON(vars.CI_RUNNER || '["self-hosted","sas-worker"]') }}
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_PR || vars.CI_RUNNER || '["self-hosted","sas-worker"]') }}
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4

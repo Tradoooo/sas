@@ -1,10 +1,17 @@
 name: ci
 
-# CI budget: 5 minutes max per job (user rule 2026-10-24). One job, one
-# self-hosted worker, no network dependency: every test runs offline against
+# CI budget: 5 minutes max per job (user rule 2026-10-24). One job, no
+# network dependency for the tests themselves: every test runs offline against
 # the local AgentCore backend and the fakes in `tests/fakes`.
 # Real AWS work (CDK synth, AgentCore calls) lives in `deploy-check.yml`,
 # which never runs on a pull request.
+#
+# Runner: `CI_RUNNER_PR` (GitHub-hosted by default). The repository is public,
+# and a public repository may only use the organisation's self-hosted runners
+# if the runner group allows it — and those runners are saturated anyway, so a
+# pull request would queue behind the whole organisation. The heavy scheduled
+# jobs (nightly: mutation, bench, fuzzing) keep `CI_RUNNER` — the r630 fleet —
+# because they are calibrated for it.
 
 on:
   pull_request:
@@ -25,7 +32,7 @@ env:
 jobs:
   ci:
     name: ci
-    runs-on: ${{ fromJSON(vars.CI_RUNNER || '["self-hosted","sas-worker"]') }}
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_PR || vars.CI_RUNNER || '["self-hosted","sas-worker"]') }}
     timeout-minutes: 5
     steps:
       - name: Checkout (shallow)
