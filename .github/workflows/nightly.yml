@@ -62,7 +62,7 @@ jobs:
           python3 -m coverage report -m | tail -40
           # Le seuil est un plancher, pas une cible : il empêche une régression
           # silencieuse, il ne pousse pas à écrire des tests qui ne prouvent rien.
-          python3 -m coverage report --fail-under=70 -q
+          python3 -m coverage report --fail-under=70 > /dev/null
 
   mutation:
     name: force des tests sur le cœur intellectuel
