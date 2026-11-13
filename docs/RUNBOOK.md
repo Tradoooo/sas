@@ -101,3 +101,31 @@ without spending money:
   — §34 point 3. The three demo guests are synthetic and labelled as such.
 - Drift detection does not cover fine hidden channels (§16.4); an unmeasurable
   agent is declared unmeasurable, never compliant (ENF-17).
+
+## 8. The runners (the repository is public)
+
+`Tradoooo/sas` is a **public** repository, and a public repository may only use
+the organisation's self-hosted runners if their runner group allows public
+repositories. So the runners are split, and the split is deliberate:
+
+| Jobs | Runner | Why |
+|---|---|---|
+| `ci`, `ci-budget`, `stale-base-guard`, `hermes-lite`, `conflict-resolver` | **GitHub-hosted** (`ubuntu-latest`, variable `CI_RUNNER_PR`) | a pull request is untrusted code: it runs in an ephemeral VM, never on an organisation machine — and it does not queue behind the whole organisation |
+| `nightly` (mutation, bench, fuzzing, campagne N=6, couverture, conformité, données portail) | **self-hosted**, group `sas`, runner `r630-sas-01` (variable `CI_RUNNER`) | those jobs are calibrated for the r630 (the longest, the coverage, takes ~2 min there) |
+
+The `sas` runner group is **selected** (`Tradoooo/sas` only) and allows public
+repositories; the organisation's `Default` group keeps
+`allows_public_repositories: false`, so the shared r630 fleet stays closed to
+the other public repositories of the organisation.
+
+Runner service (on r630):
+
+```bash
+systemctl --user status actions-runner-r630-sas-01.service
+systemctl --user restart actions-runner-r630-sas-01.service
+```
+
+If it is offline, the nightly queues; the light CI keeps working on
+GitHub-hosted. A runner that shows up in the group but never picks a job is
+usually a label mismatch: the workflows ask for `self-hosted` **and**
+`sas-worker`.
