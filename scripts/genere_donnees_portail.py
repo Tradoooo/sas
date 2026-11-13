@@ -1,6 +1,6 @@
 """Generate the portal's public dataset by running the real engine.
 
-GitHub Pages is static: there is no Python behind `baptistefaisy.github.io/sas`.
+GitHub Pages is static: there is no Python behind `tradoooo.github.io/sas`.
 Rather than hard-coding fake numbers in the page, this script **runs the airlock
 for real** — three synthetic guests, the eight scenarios of annexe B, N replays —
 and writes what it measured to `portal/data/demo.json`. The portal serves that
