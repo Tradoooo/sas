@@ -10,6 +10,9 @@ Implementation* special prize.
 **Live demo (public, no account, no install):**
 <https://tradoooo.github.io/sas/>
 
+**In a hurry?** → [`docs/JURY.md`](docs/JURY.md) — what to click, what proves
+it is real, and what it does not do.
+
 The page shows four synthetic guest agents going through the airlock and coming
 out with four different outcomes — approved, approved with conditions, refused,
 and declared not measurable — with the measured journal coverage, the declared
