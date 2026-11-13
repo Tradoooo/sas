@@ -24,7 +24,7 @@ from sas.manifeste.validation import est_executable
 from sas.ombre import GenerateurOmbre, SupportOmbre
 from sas.orchestrateur.sessions import executer_rejeu
 from sas.scenarios import Scenario, entree_pour
-from sas.store.local import DepotLocal
+from sas.store.base import Depot
 from sas.types import Campagne as CampagneType
 from sas.types import (
     CoutMesure,
@@ -68,7 +68,7 @@ class Campagne:
         version_courante: str | None = None,
         support: SupportOmbre | None = None,
         generateur: GenerateurOmbre | None = None,
-        depot: DepotLocal | None = None,
+        depot: Depot | None = None,
         backend: Backend | None = None,
         interrupteur: Interrupteur | None = None,
         memoire_persistante: bool | None = None,
@@ -213,6 +213,18 @@ def _maj_campagne(
     return replace(campagne, statut=statut, terminee_le=termine, cout_mesure=mesure)
 
 
+def _cle_campagne(agent_id: str, manifeste: Manifeste, n_rejeux: int, variante: str) -> str:
+    """What makes a campaign unique — and reproducible.
+
+    The identifier is derived from the campaign's own inputs, so the same
+    inputs give the same identifier and the same fingerprints (ENF-11). The
+    `variante` is the guest actually measured: the three demonstration guests
+    share one reference manifest, and without it they would share one campaign
+    — three runs, one row.
+    """
+    return f"{agent_id}:{manifeste.version}:{n_rejeux}:{variante}"
+
+
 def nouvelle_campagne(
     *,
     tenant_id: str,
@@ -222,11 +234,12 @@ def nouvelle_campagne(
     n_rejeux: int = 2,
     graine: int = 0,
     scenarios: Sequence[str] = (),
+    variante: str = "",
 ) -> CampagneType:
     """Build the campaign record. `n_rejeux` defaults to the development level
     (§26.4 rule 2): the full N = 6 is reserved for demonstration campaigns."""
     return CampagneType(
-        id=nouveau("camp", graine=graine, cle=f"{agent_id}:{manifeste.version}:{n_rejeux}"),
+        id=nouveau("camp", graine=graine, cle=_cle_campagne(agent_id, manifeste, n_rejeux, variante)),
         tenant_id=tenant_id,
         agent_id=agent_id,
         manifeste_id=manifeste.agent_id,

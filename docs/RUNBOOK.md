@@ -129,3 +129,45 @@ If it is offline, the nightly queues; the light CI keeps working on
 GitHub-hosted. A runner that shows up in the group but never picks a job is
 usually a label mismatch: the workflows ask for `self-hosted` **and**
 `sas-worker`.
+
+## 9. Déployer et prouver dans un vrai environnement
+
+The submission must not only *claim* a deployment. This is the sequence that
+produced a real one, with the three traps it holds.
+
+```bash
+cd infra/cdk
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+cdk bootstrap aws://<compte>/eu-west-3 --region eu-west-3   # une fois
+cdk synth                                                  # les 7 piles
+cdk deploy sas-donnees-dev --region eu-west-3 --require-approval never
+```
+
+Then the demonstration writes into the deployed tables, and the tests prove it:
+
+```bash
+PYTHONPATH=src python3 -m sas.cli demo --store dynamodb --tenant tenant-demo
+PYTHONPATH=src python3 -m pytest tests/unit/aws -m aws -v
+```
+
+**The three traps, each of which cost a deployment:**
+
+1. **A REST API without a method is invalid.** CloudFormation rejects
+   `sas-api-dev` with *"The REST API doesn't contain any methods"*. The `api`
+   stack therefore carries the Cognito pool, and the Lambda that would give the
+   API its methods does not exist yet (lot 18). Deploying the stack before
+   writing the Lambda is how this trap is met.
+2. **The physical names must be written down.** CloudFormation generates
+   `sas-donnees-dev-journalDF5B…` if the table has no explicit name, and the
+   adapter would then address a table that does not exist. The names are
+   deterministic (`sas-donnees-<table>-<env>`) and published as the stack's
+   outputs; the adapter reads **those outputs**, never a guess.
+3. **A scan is one page.** `scan()` returns one megabyte at a time and the
+   filter applies inside the page: reading only the first page silently drops
+   rows, which turns a complete journal into a partial one and makes the chain
+   verification lie. The adapter walks the scan to its end.
+
+**The credentials.** The tests marked `aws` need an account and the deployed
+stack; without them they **skip** (never silently pass). The nightly job
+`store-reel` runs them when the runner has credentials, and says so in the log
+when it does not.

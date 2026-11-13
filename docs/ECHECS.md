@@ -62,28 +62,58 @@ can only add disagreement routing; it can never change the retained nature.
 The honest consequence: the classifier quality metric of §13.4 (the
 disagreement rate) is not measurable today.
 
-## 3. Nothing runs on AWS — the backend exists, it has never been executed
+## 3. The data plane runs on AWS; the AgentCore half does not
 
-**What is true today.** `src/sas/agentcore/aws.py` implements the six ports,
-but: `boto3` is imported lazily and only inside functions;
-`BoiteOutilsAWS.appeler()` denies everything ("gateway non armée : rien n'est
-autorisé par défaut"); `RuntimeAWS.executer()` is a TODO pending spec §34
-point 3; `GatewayAWS.latence_ms()` returns the module constant
-`_LATENCE_AJOUTEE = 0.0`, not a measurement. The tests
-(`tests/unit/aws/test_backend_ports.py`) verify protocol conformance and the
-honest errors raised without credentials or without boto3
-(`test_backend_leve_une_erreur_honnete_sans_identifiants`,
-`test_backend_leve_une_erreur_honnete_sans_boto3`) — they never touch AWS. The
-CDK stacks in `infra/cdk/` are asserted as data (`tests/unit/iac/test_stacks.py`)
-and are never synthesized nor deployed by CI. The AWS backend has never been
-executed against a real account.
+**What is true today — and it is no longer nothing.** The `donnees` stack is
+**synthesized and deployed** (`cdk deploy sas-donnees-dev`, eu-west-3): sixteen
+DynamoDB tables and the evidence bucket exist, with the TTL the DDL declares.
+The port `Depot` now has its **real backend** — `src/sas/store/dynamodb.py`
+plus `src/sas/store/serialisation.py` — and the demonstration runs against it:
 
-**What it would take.** Credentials, one deployment in `eu-west-3`, then spec
-§34 points 1 to 3.
+```
+python3 -m sas.cli demo --store dynamodb --tenant tenant-demo
+```
 
-**Disqualifying?** For real production use: yes, until it has run once. For
-the contest: no — offline determinism is a contest rule, and that is exactly
-why the fully tested backend is the local one.
+Three guests, three verdicts, and 298 journal entries written to the real
+tables, whose chain is verified again on read-back
+(`test_une_campagne_reelle_ecrit_dans_les_vraies_tables`,
+`test_la_chaine_du_journal_tient_le_aller_retour`,
+`tests/unit/aws/test_store_reel.py`, marked `aws` — they need the account and
+the stack, so they never run on a pull request).
+
+**What is still not true.** The *guest execution* half never touched AWS:
+`src/sas/agentcore/aws.py` implements the six ports, but `boto3` is imported
+lazily and only inside functions; `BoiteOutilsAWS.appeler()` denies everything
+("gateway non armée : rien n'est autorisé par défaut");
+`RuntimeAWS.executer()` is a TODO pending spec §34 point 3;
+`GatewayAWS.latence_ms()` returns the module constant `_LATENCE_AJOUTEE = 0.0`,
+not a measurement. The tests (`tests/unit/aws/test_backend_ports.py`) verify
+protocol conformance and the honest errors raised without credentials or
+without boto3 (`test_backend_leve_une_erreur_honnete_sans_identifiants`,
+`test_backend_leve_une_erreur_honnete_sans_boto3`). The **model call** (§34
+point 2) is still an empty port, the API Gateway stack carries only the
+Cognito pool (a REST API without a method is rejected by CloudFormation, and
+the Lambda that would give it methods does not exist yet), and the three
+remaining stacks (`agentcore`, `orchestration`, `portail`) are synthesized but
+not deployed.
+
+**What it would take.** The Lambda that runs `sas.api` in the `api` stack, a
+container image for the guests on ECR, then `RuntimeAWS.executer()` — and spec
+§34 points 1 to 4 measured on the real stack.
+
+**Disqualifying?** For real production use: yes, until the *guest* runs on
+AgentCore. For the contest: no — the data plane being real is what lets the
+submission show a deployed stack, a real store and real tests, and the
+offline determinism of the engine remains a contest rule.
+
+**What the real environment taught us.** Three defects no offline test could
+see, all found by writing to the real tables: the three demonstration guests
+shared one campaign identifier (the campaign is now distinguished by the guest
+measured); a replayed campaign rewrote the journal instead of appending it (the
+journal is append-only and immutable, §17.1); and the global secondary index
+on `session_id` returned **another tenant's** rows, because the identifiers are
+deterministic and shared between tenants — the index keys are now
+tenant-scoped, structurally (EF-51).
 
 ## 4. The evaluation bench is delivered — but the generator script of annexe F.3 is not
 

@@ -14,6 +14,7 @@ from sas.homologation import Dossier, analyser
 from sas.manifeste import charger
 from sas.orchestrateur import Campagne, nouvelle_campagne
 from sas.scenarios import Scenario, charger_tous
+from sas.store.base import Depot
 from sas.types import Manifeste
 
 RACINE = Path(__file__).resolve().parents[2]
@@ -44,6 +45,8 @@ def lancer(
     rejeux: int = constantes.N_DEVELOPPEMENT,
     graine: int = 7,
     tenant_id: str = "tenant-demo",
+    depot: Depot | None = None,
+    rang_du_jour: int = 1,
 ) -> Dossier:
     """Run one shadow campaign and analyse it end to end."""
     campagne = nouvelle_campagne(
@@ -53,12 +56,14 @@ def lancer(
         n_rejeux=rejeux,
         graine=graine,
         scenarios=[s.id for s in contexte.scenarios],
+        variante=agent.nom,
     )
     resultat = Campagne(
         campagne=campagne,
         manifeste=contexte.manifeste,
         agent=agent,
         scenarios=contexte.scenarios,
+        depot=depot,
     ).executer()
     return analyser(
         resultat,
@@ -67,6 +72,7 @@ def lancer(
         ressources_sensibles=LEURRES_SENSIBLES,
         leurres=LEURRES_MARQUES,
         graine=graine,
+        rang_du_jour=rang_du_jour,
     )
 
 

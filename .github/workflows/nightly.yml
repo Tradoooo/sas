@@ -141,3 +141,29 @@ jobs:
           persist-credentials: false
       - name: Garde de soumission et matrice de traçabilité
         run: python3 scripts/check_contest.py
+
+  store-reel:
+    name: store réel (DynamoDB déployé)
+    runs-on: ${{ fromJSON(vars.CI_RUNNER || '["self-hosted","sas-worker"]') }}
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - name: Identifiants AWS disponibles ?
+        id: identites
+        run: |
+          set -euo pipefail
+          if aws sts get-caller-identity >/dev/null 2>&1; then
+            echo "disponible=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "disponible=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::aucun identifiant AWS sur ce runner : les tests du store réel ne sont pas exécutés ici"
+          fi
+      - name: Les tests du store réel
+        if: steps.identites.outputs.disponible == 'true'
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet --user boto3 "botocore[crt]" ||             python3 -m pip install --quiet --break-system-packages boto3 "botocore[crt]"
+          PYTHONPATH=src python3 -m pytest tests/unit/aws -m aws -v --maxfail=5

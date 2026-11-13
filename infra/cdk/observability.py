@@ -57,9 +57,33 @@ def observabilite_cdk(scope: Any) -> Any:
         cloudwatch.Alarm(
             scope,
             alarme["nom"],
-            metric=None,
+            metric=_metrique(alarme),
             threshold=alarme.get("seuil", alarme.get("seuil_alerte")),
             evaluation_periods=alarme.get("evaluation_periodes", 1),
+            comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_OR_EQUAL_TO_THRESHOLD,
+            treat_missing_data=cloudwatch.TreatMissingData.NOT_BREACHING,
         )
     cdk.Tags.of(scope).add("projet", "sas")
     return None
+
+
+def _metrique(alarme: dict[str, Any]) -> Any:
+    """The metric an alarm watches.
+
+    An alarm without a metric does not exist (CloudWatch refuses it), so each
+    declared alarm names the metric it watches: the API's 5xx rate for the
+    availability rule, the estimated charges for the budget rule (§26.4).
+    """
+    from aws_cdk import aws_cloudwatch as cloudwatch
+
+    if "metrique" in alarme:
+        return cloudwatch.Metric(
+            namespace="AWS/ApiGateway",
+            metric_name=alarme["metrique"],
+            statistic="Sum",
+        )
+    return cloudwatch.Metric(
+        namespace="AWS/Billing",
+        metric_name="EstimatedCharges",
+        statistic="Maximum",
+    )

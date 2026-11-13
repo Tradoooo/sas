@@ -248,7 +248,8 @@ class DepotLocal:
         """§22.1 rule 4 — immutable; a correction is a new dated attestation."""
         if attestation.tenant_id != self._tenant.id:
             raise AccesInterdit(self._tenant.id, attestation.tenant_id)
-        if attestation.id in self._attestations:
+        existante = self._attestations.get(attestation.id)
+        if existante is not None and existante != attestation:
             raise IntegriteRefusee(f"l'attestation {attestation.numero} existe déjà : elle ne se corrige pas")
         agent = self._agent_de_la_campagne(attestation.campagne_id)
         if agent is not None and agent.statut is StatutAgent.NON_MESURABLE:
