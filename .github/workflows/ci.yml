@@ -38,10 +38,12 @@ jobs:
         run: |
           # The self-hosted workers already ship them; a GitHub-hosted runner
           # needs them installed (kept optional so an offline worker still runs).
+          # fastapi + httpx are required by the published API contract
+          # (genere_openapi.py --verifier) and by the portal's own tests.
           python3 -m pip install --quiet --upgrade pip 2>/dev/null || true
-          python3 -m pip install --quiet ruff pytest pyyaml 2>/dev/null \
+          python3 -m pip install --quiet ruff pytest pyyaml fastapi httpx 2>/dev/null \
             || python3 -m pip install --quiet --user --break-system-packages \
-                 ruff pytest pyyaml 2>/dev/null \
+                 ruff pytest pyyaml fastapi httpx 2>/dev/null \
             || echo "installation skipped: the worker already has the tools"
 
       - name: Lint (ruff)
