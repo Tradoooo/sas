@@ -21,10 +21,17 @@ from sas import constantes
 from sas.cli_partage import charger_contexte, etiquette_synthese, lancer
 from sas.homologation import Dossier, resume
 from sas.statistiques import phrase_portee
+from sas.store.base import Depot
 
 
 def executer_demo(
-    *, rejeux: int = 2, graine: int = 11, agent: str = "", scenarios: Sequence[str] = ()
+    *,
+    rejeux: int = 2,
+    graine: int = 11,
+    agent: str = "",
+    scenarios: Sequence[str] = (),
+    depot: Depot | None = None,
+    tenant_id: str = "tenant-demo",
 ) -> int:
     invites = (agent,) if agent else constantes.AGENTS_DEMO
     contexte = charger_contexte(scenarios)
@@ -34,8 +41,9 @@ def executer_demo(
 
     _entete(contexte, rejeux, graine)
     dossiers: list[tuple[str, Dossier]] = []
-    for nom in invites:
-        dossiers.append((nom, _un_agent(nom, contexte, rejeux, graine)))
+    for rang, nom in enumerate(invites, start=_rang_du_jour(depot) + 1):
+        dossier = _un_agent(nom, contexte, rejeux, graine, depot, tenant_id, rang)
+        dossiers.append((nom, dossier))
 
     print("\n" + "=" * 78)
     print("2:10  VERDICTS")
@@ -66,7 +74,30 @@ def _entete(contexte: object, rejeux: int, graine: int) -> None:
     print(f"  sorties autorisées   {len(manifeste.sorties_autorisees)} (aucune par défaut)")
 
 
-def _un_agent(nom: str, contexte: object, rejeux: int, graine: int) -> Dossier:
+def _rang_du_jour(depot: Depot | None) -> int:
+    """The next attestation number of the day.
+
+    The numero is a daily sequence: when the demo writes to a real store, it
+    continues the numbering the store already holds instead of restarting at 1
+    and issuing a second attestation under a number taken yesterday's.
+    """
+    if depot is None:
+        return 0
+    from sas.identifiants import maintenant
+
+    aujourdhui = maintenant().date()
+    return sum(1 for attestation in depot.attestations() if attestation.date.date() == aujourdhui)
+
+
+def _un_agent(
+    nom: str,
+    contexte: object,
+    rejeux: int,
+    graine: int,
+    depot: Depot | None = None,
+    tenant_id: str = "tenant-demo",
+    rang_du_jour: int = 1,
+) -> Dossier:
     from sas.cli_partage import invite
 
     print("\n" + "=" * 78)
@@ -77,9 +108,31 @@ def _un_agent(nom: str, contexte: object, rejeux: int, graine: int) -> Dossier:
     except ValueError as exc:
         print(f"  agent inconnu: {exc}", file=sys.stderr)
         raise SystemExit(2) from exc
-    dossier = lancer(agent=agent, contexte=contexte, rejeux=rejeux, graine=graine)
+    dossier = lancer(
+        agent=agent,
+        contexte=contexte,
+        rejeux=rejeux,
+        graine=graine,
+        depot=depot,
+        tenant_id=tenant_id,
+        rang_du_jour=rang_du_jour,
+    )
+    if depot is not None:
+        _persister(depot, dossier)
     _afficher(nom, dossier)
     return dossier
+
+
+def _persister(depot: Depot, dossier: Dossier) -> dict[str, int]:
+    """Write what the campaign produced into the store.
+
+    The campaign and its sessions were written by the orchestrator; the journal,
+    the findings and the attestation are written here, so the store holds the
+    same evidence the report quotes — not a summary of it.
+    """
+    from sas.store.persistance import persister
+
+    return persister(depot, dossier)
 
 
 def _afficher(nom: str, dossier: Dossier) -> None:

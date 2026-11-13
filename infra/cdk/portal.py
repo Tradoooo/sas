@@ -24,19 +24,24 @@ def portail_cdk(scope: Any) -> Any:
     """Build S3 + CloudFront. ``aws_cdk`` imported here only."""
     import aws_cdk as cdk  # lazy on purpose
     from aws_cdk import aws_cloudfront as cloudfront
+    from aws_cdk import aws_cloudfront_origins as origins
     from aws_cdk import aws_s3 as s3
 
+    # The bucket is private and served through CloudFront (origin access
+    # control): the site must not be readable from the S3 endpoint, and the
+    # index document is a CloudFront concern, not a bucket one.
     seau = s3.Bucket(
         scope,
         "portail",
-        website_index_document="index.html",
         encryption=s3.BucketEncryption.S3_MANAGED,
         block_public_access=s3.BlockPublicAccess.BLOCK_ALL,
+        enforce_ssl=True,
     )
     dist = cloudfront.Distribution(
         scope,
         "portail-distribution",
-        default_behavior=cloudfront.BehaviorOptions(origin=cloudfront.S3Origin(seau)),
+        default_root_object="index.html",
+        default_behavior=cloudfront.BehaviorOptions(origin=origins.S3BucketOrigin(seau)),
     )
     cdk.Tags.of(dist).add("projet", "sas")
     return dist

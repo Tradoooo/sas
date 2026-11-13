@@ -10,6 +10,7 @@ import argparse
 import sys
 from collections.abc import Sequence
 from pathlib import Path
+from typing import Any
 
 from sas import constantes
 from sas.cli_demo import executer_demo
@@ -24,11 +25,21 @@ def construire_parseur() -> argparse.ArgumentParser:
         description="Sas — homologation and controlled execution of third-party AI agents.",
     )
     sous = parseur.add_subparsers(dest="commande", required=True)
+    _commande_smoke(sous)
+    _commande_demo(sous)
+    _commande_portail(sous)
+    _commande_attestation(sous)
+    _commande_mcp(sous)
+    return parseur
 
+
+def _commande_smoke(sous: Any) -> None:
     smoke = sous.add_parser("smoke", help="one shadow campaign, 2 scenarios, complete journal")
     smoke.add_argument("--rejeux", type=int, default=constantes.N_DEVELOPPEMENT, help="replays per scenario")
     smoke.add_argument("--graine", type=int, default=7)
 
+
+def _commande_demo(sous: Any) -> None:
     demo = sous.add_parser("demo", help="the 3-minute demo: 3 synthetic guests, 3 verdicts")
     demo.add_argument("--rejeux", type=int, default=constantes.N_DEVELOPPEMENT)
     demo.add_argument("--graine", type=int, default=11)
@@ -36,11 +47,24 @@ def construire_parseur() -> argparse.ArgumentParser:
         "--agent", default="", help="run a single guest (demo-conforme|demo-bavard|demo-curieux)"
     )
     demo.add_argument("--scenarios", default="", help="comma separated scenario ids (default: the eight)")
+    demo.add_argument(
+        "--store",
+        default="memoire",
+        choices=("memoire", "dynamodb"),
+        help="où la campagne est écrite : rien (défaut) ou les vraies tables DynamoDB",
+    )
+    demo.add_argument("--tenant", default="tenant-demo", help="tenant de la campagne (store réel)")
+    demo.add_argument("--region", default="eu-west-3", help="région AWS du store réel")
+    demo.add_argument("--pile", default="sas-donnees-dev", help="pile CloudFormation du store réel")
 
+
+def _commande_portail(sous: Any) -> None:
     portail = sous.add_parser("portail", help="serve the portal and the API on one origin")
     portail.add_argument("--port", type=int, default=8123)
     portail.add_argument("--hote", default="127.0.0.1")
 
+
+def _commande_attestation(sous: Any) -> None:
     attestation = sous.add_parser(
         "attestation", help="print or export the attestation of a campaign (text, html or pdf)"
     )
@@ -53,6 +77,8 @@ def construire_parseur() -> argparse.ArgumentParser:
     attestation.add_argument("--sortie", default="", help="output file (default: <numero>.pdf|.html)")
     attestation.add_argument("--derniere", action="store_true", help="accepted for symmetry; no store yet")
 
+
+def _commande_mcp(sous: Any) -> None:
     mcp = sous.add_parser(
         "mcp",
         help="expose the gateway as an MCP server on stdio (any MCP agent plugs in)",
@@ -62,7 +88,21 @@ def construire_parseur() -> argparse.ArgumentParser:
     mcp.add_argument("--tenant", default="tenant-demo")
     mcp.add_argument("--graine", type=int, default=0)
 
-    return parseur
+
+def _ouvrir_store(args: object) -> object:
+    """The real store, opened from the deployed stack's own outputs.
+
+    The table names are read from the CloudFormation stack, so the demo cannot
+    write to a table that does not exist — and a wrong stack name fails loudly
+    instead of writing nowhere.
+    """
+    from sas.store.dynamodb import ouvrir
+
+    return ouvrir(
+        getattr(args, "tenant", "tenant-demo"),
+        region=getattr(args, "region", "eu-west-3"),
+        pile=getattr(args, "pile", "sas-donnees-dev"),
+    )
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -71,7 +111,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         return executer_smoke(rejeux=args.rejeux, graine=args.graine)
     if args.commande == "demo":
         scenarios = tuple(s.strip() for s in args.scenarios.split(",") if s.strip())
-        return executer_demo(rejeux=args.rejeux, graine=args.graine, agent=args.agent, scenarios=scenarios)
+        depot = _ouvrir_store(args) if getattr(args, "store", "memoire") == "dynamodb" else None
+        return executer_demo(
+            rejeux=args.rejeux,
+            graine=args.graine,
+            agent=args.agent,
+            scenarios=scenarios,
+            depot=depot,
+            tenant_id=args.tenant,
+        )
     if args.commande == "portail":
         from sas.cli_portail import servir
 

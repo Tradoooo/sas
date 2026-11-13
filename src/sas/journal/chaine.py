@@ -33,7 +33,7 @@ class JournalChaine:
         """Append one entry and return it with its chain fields filled in."""
         precedente = self._queues.get(entree.session_id, "")
         scellee = replace(entree, empreinte_prec=precedente)
-        scellee = replace(scellee, empreinte=chainer(precedente, _projection(scellee)))
+        scellee = replace(scellee, empreinte=chainer(precedente, projection(scellee)))
         self._entrees.append(scellee)
         self._queues[entree.session_id] = scellee.empreinte
         return scellee
@@ -72,7 +72,7 @@ class JournalChaine:
         for entree in entrees:
             if entree.empreinte_prec != attendue:
                 return EtatChaine(False, len(entrees), entree.id, attendue)
-            if chainer(attendue, _projection(entree)) != entree.empreinte:
+            if chainer(attendue, projection(entree)) != entree.empreinte:
                 return EtatChaine(False, len(entrees), entree.id, attendue)
             attendue = entree.empreinte
         return EtatChaine(True, len(entrees), None, attendue)
@@ -120,8 +120,12 @@ def verifier_sequence(entrees: Sequence[EntreeJournal]) -> EtatChaine:
     return journal.verifier()
 
 
-def _projection(entree: EntreeJournal) -> dict[str, object]:
-    """What the chain commits to: everything but the chain fields themselves."""
+def projection(entree: EntreeJournal) -> dict[str, object]:
+    """What the chain commits to: everything but the chain fields themselves.
+
+    Public because the DynamoDB backend must compute the very same projection
+    when it re-chains an entry it reads back — one implementation, not two.
+    """
     donnees = _serialisable(entree)
     donnees.pop("empreinte", None)
     donnees.pop("empreinte_prec", None)
@@ -143,4 +147,18 @@ def fusionner(journaux: Iterable[JournalChaine]) -> JournalChaine:
         for entree in journal.entrees():
             resultat._entrees.append(entree)
             resultat._queues[entree.session_id] = entree.empreinte
+    return resultat
+
+
+def reconstruire(entrees: Iterable[EntreeJournal]) -> JournalChaine:
+    """Rebuild a journal from entries read back from a store.
+
+    The DynamoDB backend keeps the entries in the table, not in memory: this
+    rebuilds the chain so the purge attestation can read the root before and
+    after the purge, with the very same verification code.
+    """
+    resultat = JournalChaine()
+    for entree in entrees:
+        resultat._entrees.append(entree)
+        resultat._queues[entree.session_id] = entree.empreinte
     return resultat

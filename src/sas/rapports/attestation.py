@@ -8,11 +8,12 @@ statistical scope (KPI-7).
 
 from __future__ import annotations
 
+import hashlib
 from collections.abc import Sequence
 from datetime import datetime, timedelta
 
 from sas import constantes
-from sas.identifiants import numero_attestation, tronquer
+from sas.identifiants import canonique, numero_attestation, tronquer
 from sas.rapports.verdict import Decision
 from sas.types import (
     Attestation,
@@ -45,7 +46,7 @@ def construire(
 ) -> Attestation:
     """Build the attestation. Counts only — never an exploitable detail."""
     return Attestation(
-        id=f"att-{campagne.id}",
+        id=_identifiant(campagne, manifeste, decision, etat_chaine, date, rang_du_jour),
         numero=numero_attestation(date, rang_du_jour),
         campagne_id=campagne.id,
         tenant_id=campagne.tenant_id,
@@ -234,3 +235,30 @@ def _portee(borne: BorneStatistique, langue: str) -> list[str]:
 
 def prefixe_numero() -> str:
     return constantes.ATTESTATION_PREFIXE
+
+
+def _identifiant(
+    campagne: Campagne,
+    manifeste: Manifeste,
+    decision: Decision,
+    etat_chaine: EtatChaine,
+    date: datetime,
+    rang_du_jour: int,
+) -> str:
+    """The attestation's identifier, derived from what it attests.
+
+    §22.1: an attestation is never corrected — a new dated one replaces it and
+    references the old. So the identifier cannot be the campaign's: the same
+    campaign replayed on another day is a **new** attestation, not a corrected
+    one. It is derived from the content, like the purge attestation's.
+    """
+    corps = {
+        "campagne": campagne.id,
+        "date": date.isoformat(),
+        "numero": numero_attestation(date, rang_du_jour),
+        "agent": manifeste.identite.nom,
+        "version": manifeste.identite.version_agent,
+        "verdict": decision.verdict.value,
+        "journal": etat_chaine.empreinte_finale,
+    }
+    return "att-" + hashlib.sha256(canonique(corps).encode("utf-8")).hexdigest()[:16]
