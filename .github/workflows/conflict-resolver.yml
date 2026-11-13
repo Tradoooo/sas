@@ -58,7 +58,7 @@ env:
 jobs:
   resolve:
     name: resolve-conflicts
-    runs-on: ${{ fromJSON(vars.CI_RUNNER || '["self-hosted","sas-worker"]') }}
+    runs-on: ${{ fromJSON(vars.CI_RUNNER_PR || vars.CI_RUNNER || '["self-hosted","sas-worker"]') }}
     timeout-minutes: 5
     steps:
       - name: Checkout (superficiel, pour lire l'agent de main)
