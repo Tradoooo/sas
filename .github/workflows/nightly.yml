@@ -111,7 +111,7 @@ jobs:
           if [ ! -d eval ]; then
             echo "eval/ absent (lot 18 en cours) : saut"; exit 0
           fi
-          PYTHONPATH=src python3 -m pytest tests/unit/eval -q -m "slow or not slow" --maxfail=10
+          PYTHONPATH=src python3 -m pytest tests/unit/banc -q -m "slow or not slow" --maxfail=10
 
   donnees-portail:
     name: reproductibilité du jeu de données public
