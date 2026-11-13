@@ -11,7 +11,7 @@
 | Track | form | 🟢 Track **2** — Deliver AI-Driven Outcomes for Customers | — |
 | AWS AI service | form + README | 🟡 AgentCore (6 components) ported and running **offline** (`src/sas/agentcore/`); real AWS backend (`aws.py`) not written (lot 17) | lot 17 (AWS backend, IaC) |
 | Description | Devpost, English | 🟢 `README.md`, `docs/HLD.md` (this lot) | paste into Devpost |
-| Deployed URL | GitHub Pages (public) | 🟢 **https://baptistefaisy.github.io/sas/** — the portal is published on every push to `main` by `.github/workflows/deploy.yml` | a CloudFront URL with the live API (no AWS account here) |
+| Deployed URL | GitHub Pages (public) | 🟢 **https://tradoooo.github.io/sas/** — the portal is published on every push to `main` by `.github/workflows/deploy.yml` | a CloudFront URL with the live API (no AWS account here) |
 | Repository | GitHub, public | 🟢 repo exists; CI green; `main` protected (Mergify is the only merge driver) | — |
 | Video | 3 min, YouTube public, English | 🟡 [`docs/VIDEO.md`](VIDEO.md) written (13 shots, EN voice-over) | **film and publish** |
 | Diagram | Mermaid + SVG | 🟢 [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) (Mermaid) + [`docs/architecture.svg`](architecture.svg) | — |
@@ -20,7 +20,7 @@
 ### Honest gaps that remain
 
 * **No live API behind the public URL.** GitHub Pages serves static files, so
-  `https://baptistefaisy.github.io/sas/` runs in **static mode**: it shows
+  `https://tradoooo.github.io/sas/` runs in **static mode**: it shows
   `portal/data/demo.json`, which was produced by running the real engine on the
   synthetic demo data. The page says so in a banner. To launch a campaign live,
   run `make portail` locally (or deploy `infra/cdk`, which maps the same routes

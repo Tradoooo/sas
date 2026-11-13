@@ -8,7 +8,7 @@ Outcomes for Customers**, targeting the *Best Amazon Bedrock AgentCore
 Implementation* special prize.
 
 **Live demo (public, no account, no install):**
-<https://baptistefaisy.github.io/sas/>
+<https://tradoooo.github.io/sas/>
 
 The page shows four synthetic guest agents going through the airlock and coming
 out with four different outcomes — approved, approved with conditions, refused,

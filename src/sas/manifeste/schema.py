@@ -309,7 +309,7 @@ def schema_json() -> dict[str, Any]:
         proprietes[nom] = _schema_bloc(bloc, liste=nom in BLOCS_LISTES)
     return {
         "$schema": "https://json-schema.org/draft/2020-12/schema",
-        "$id": "https://github.com/BaptisteFaisy/sas/schemas/manifeste.schema.json",
+        "$id": "https://github.com/Tradoooo/sas/schemas/manifeste.schema.json",
         "title": "Sas agent manifest",
         "description": "Signed declaration of what a third-party agent asks for and commits to (spec §9).",
         "type": "object",

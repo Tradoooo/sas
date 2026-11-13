@@ -33,7 +33,7 @@ Version 1.0 du 11 novembre 2026 — Hackathon AWS MSP AI, Track 2
 | Échéance de soumission | Vendredi 11 décembre 2026, 12h00 PT (21h00 à Paris) |
 | Fin du jugement | 22 janvier 2027 : la solution doit rester en ligne jusque-là |
 | Budget crédits | 200 $ par AWS Account ID, expirent le 31 décembre 2026 |
-| Dépôt | `BaptisteFaisy/sas` (privé, partagé avec les deux adresses du règlement) |
+| Dépôt | `Tradoooo/sas` (public, partagé avec les deux adresses du règlement) |
 | Règles de code | Fichiers < 500 lignes, fonctions < 50 lignes, CI ≤ 5 min, Mergify seul pilote du merge |
 
 ---

@@ -1,7 +1,7 @@
 /* Batterie de tests du portail Sas — Chromium headless (aucune fenêtre, aucun focus).
  *
  * Deux cibles :
- *   A. le site PUBLIC  https://baptistefaisy.github.io/sas/   (mode statique)
+ *   A. le site PUBLIC  https://tradoooo.github.io/sas/   (mode statique)
  *   B. le portail LOCAL http://127.0.0.1:<port>/               (mode direct, API réelle)
  *
  * Chaque vérification pousse une ligne {cible, nom, ok, detail}. Sortie : un
@@ -39,7 +39,7 @@ if (!chromium) {
   process.exit(2);
 }
 
-const PUBLIC = process.env.SAS_PUBLIC_URL || "https://baptistefaisy.github.io/sas/";
+const PUBLIC = process.env.SAS_PUBLIC_URL || "https://tradoooo.github.io/sas/";
 const LOCAL = process.env.SAS_LOCAL_URL || "http://127.0.0.1:18123/";
 const TEST_LOCAL = process.env.SAS_TEST_LOCAL === "1";
 
